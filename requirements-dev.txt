@@ -1,0 +1,7 @@
+# General Dependencies
+numpy
+pandas
+ipykernel
+
+# Tutorial code dependencies
+-r planning/tutorial/code/requirements.txt

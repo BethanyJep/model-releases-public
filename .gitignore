@@ -11,6 +11,9 @@
 *.sln.docstates
 *.env
 
+# Local planning/scratch folder - do not commit
+.do-not-commit/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
