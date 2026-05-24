@@ -1,0 +1,5 @@
+{
+  "user_message": "Hi, I'm Carmen from the San Diego office. I need to be in Berlin Tuesday morning for an offsite that runs through Thursday evening. Please book my flights and a hotel near Alexanderplatz. Keep it under $2,500. Also — here's a parking receipt from SAN three days ago, can you expense it?",
+  "image_url": "https://example.invalid/sample-receipts/san-parking-2024.jpg",
+  "_note": "image_url is a placeholder for the demo. In a real run, point to a small public image of a parking receipt, or use a base64 data URL."
+}

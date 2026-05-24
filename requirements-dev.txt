@@ -3,5 +3,5 @@ numpy
 pandas
 ipykernel
 
-# Tutorial code dependencies
--r planning/tutorial/code/requirements.txt
+# Workshop dependencies
+-r workshops/foundry-models-e2e/code/requirements.txt
