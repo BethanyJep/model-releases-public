@@ -37,6 +37,17 @@ def main():
     val   = client.files.create(file=open(VAL_FILE,   "rb"), purpose="fine-tune")
     print("uploaded:", train.id, val.id)
 
+    # Azure OpenAI requires files to reach "processed" before the job can be created.
+    for fid, label in [(train.id, "train"), (val.id, "val")]:
+        while True:
+            status = client.files.retrieve(fid).status
+            print(f"  {label} file status: {status}")
+            if status == "processed":
+                break
+            if status == "error":
+                raise RuntimeError(f"File {fid} failed to process")
+            time.sleep(5)
+
     job = client.fine_tuning.jobs.create(
         training_file=train.id,
         validation_file=val.id,
@@ -45,6 +56,7 @@ def main():
         suffix="contoso-policy-v1",
     )
     print("job:", job.id, "status:", job.status)
+    print(f"\n*** SAVE THIS JOB ID (needed if your session is interrupted): {job.id} ***\n")
 
     while True:
         job = client.fine_tuning.jobs.retrieve(job.id)

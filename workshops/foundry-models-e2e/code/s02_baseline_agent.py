@@ -1,6 +1,7 @@
 # s02_baseline_agent.py — v1: one frontier model does every task.
 # Uses the OpenAI Responses API via azure-ai-projects v2.
 import json
+import re
 import time
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
@@ -40,6 +41,21 @@ def run(user_message: str, image_url: str | None = None) -> dict:
 
         function_calls = [item for item in resp.output if item.type == "function_call"]
         if not function_calls:
+            # No more tool calls — re-run once with json_object mode to get
+            # a clean JSON final answer.
+            input_items.append({
+                "role": "user",
+                "content": "Output the final itinerary as a JSON object only.",
+            })
+            resp = client.responses.create(
+                model=DEPLOY_PLANNER,
+                instructions=INSTRUCTIONS,
+                input=input_items,
+                text={"format": {"type": "json_object"}},
+            )
+            total_in  += resp.usage.input_tokens
+            total_out += resp.usage.output_tokens
+            final_response = resp
             break
         for fc in function_calls:
             args = json.loads(fc.arguments)
@@ -50,8 +66,21 @@ def run(user_message: str, image_url: str | None = None) -> dict:
                 "output": json.dumps(out),
             })
 
+    # output_text is empty when the last response had no text item (e.g.
+    # the model only emitted function_call items on the final turn).
+    # Fall back to scanning output items for text content.
+    answer = (final_response.output_text or "") if final_response else ""
+    if not answer and final_response:
+        for item in final_response.output:
+            content = getattr(item, "content", None)
+            if content:
+                for block in (content if isinstance(content, list) else [content]):
+                    text = getattr(block, "text", None)
+                    if text:
+                        answer += text
+
     return {
-        "answer": final_response.output_text if final_response else "",
+        "answer": answer,
         "latency_s": time.time() - t0,
         "usage_by_model": {DEPLOY_PLANNER: (total_in, total_out)},
     }
@@ -72,7 +101,21 @@ if __name__ == "__main__":
     with console.status("[bold cyan]Running v1 agent (planner-gpt41)…[/]"):
         result = run(carmen["user_message"])
 
-    itinerary = json.loads(result["answer"])
+    # Strip markdown code fences if the model wrapped its JSON.
+    answer_raw = result["answer"].strip()
+    if answer_raw.startswith("```"):
+        answer_raw = "\n".join(
+            line for line in answer_raw.splitlines()
+            if not line.strip().startswith("```")
+        ).strip()
+    # If prose was returned, extract the first {...} JSON block.
+    if answer_raw and not answer_raw.lstrip().startswith("{"):
+        m = re.search(r"\{.*\}", answer_raw, re.DOTALL)
+        answer_raw = m.group() if m else ""
+    if not answer_raw:
+        console.print("[bold red]Agent returned no parseable JSON.[/] Raw answer:", repr(result["answer"]))
+        raise SystemExit(1)
+    itinerary = json.loads(answer_raw)
     tin, tout = result["usage_by_model"][DEPLOY_PLANNER]
     cost = cost_of(result["usage_by_model"])
 
@@ -82,7 +125,14 @@ if __name__ == "__main__":
     raw_hotel  = itinerary.get("hotel",  {})
     flight  = raw_flight.get("selected", raw_flight) if isinstance(raw_flight, dict) else {}
     hotel   = raw_hotel.get("selected",  raw_hotel)  if isinstance(raw_hotel,  dict) else {}
-    booking = itinerary.get("booking_status", {})
+    booking_raw = itinerary.get("booking_status", {})
+    # booking_status may be a dict {"booking_id":..., "status":...} or a plain string
+    if isinstance(booking_raw, dict):
+        booking_id  = booking_raw.get("booking_id", "?")
+        booking_status = booking_raw.get("status", "?")
+    else:
+        booking_id  = "—"
+        booking_status = str(booking_raw)
 
     itinerary_lines = (
         f"[bold]Flight[/]   {flight.get('carrier','')} {flight.get('number','')}  "
@@ -92,12 +142,15 @@ if __name__ == "__main__":
         f"${hotel.get('nightly_usd','?')}/night × {hotel.get('checkout','?')} → {hotel.get('checkin','?')}  "
         f"(${hotel.get('total_usd','?')})\n"
         f"[bold]Total[/]    ${itinerary.get('total_estimated_cost_usd', '?')} USD\n"
-        f"[bold]Booking[/]  {booking.get('booking_id','?')}  [{booking.get('status','?')}]"
+        f"[bold]Booking[/]  {booking_id}  [{booking_status}]"
     )
     console.print(Panel(itinerary_lines, title="[bold green]Carmen's Itinerary — v1[/]", expand=False))
 
     # ── Policy notes ─────────────────────────────────────────────────────
-    for note in itinerary.get("policy_notes", []):
+    policy_notes = itinerary.get("policy_notes", [])
+    if isinstance(policy_notes, str):
+        policy_notes = [policy_notes] if policy_notes else []
+    for note in policy_notes:
         console.print(f"  [dim]·[/] {note}")
 
     # ── Scorecard table ───────────────────────────────────────────────────
