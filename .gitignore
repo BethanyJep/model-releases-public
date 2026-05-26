@@ -11,6 +11,9 @@
 *.sln.docstates
 *.env
 
+# Local planning/scratch folder - do not commit
+.do-not-commit/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -427,3 +430,16 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Per-learner progress state written by the `explore-model` and
+# `run-workshop` skills. Source of truth for "what's done"; not for git.
+models/*/.progress.json
+workshops/*/.progress.json
+
+# Python virtual envs and local Foundry scratch
+.venv/
+**/.venv/
+.foundry/
+**/.foundry/
+__pycache__/
+*.pyc

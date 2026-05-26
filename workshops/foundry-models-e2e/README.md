@@ -1,0 +1,208 @@
+# Right Model, Right Job — Contoso Travel Concierge
+
+> Workshop slug: `foundry-models-e2e` · Workshop 0 (the Foundry-Models-E2E narrative)
+
+This is the **hands-on companion** to [`foundry-models-e2e-plan.md`](../../.plans/foundry-models-e2e-plan.md) (the original PLAN — speaker script + trainer guide). Follow it end-to-end and you'll have every demo in the 45-minute session built, recorded-ready, and explainable.
+
+> **Audience:** professionals who know AI but are new to Microsoft Foundry.
+> **Region:** Sweden Central. **Model family:** Azure Direct `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`.
+> **Build budget:** ~7 days of evenings, toy-scale data.
+
+## Learning objectives
+
+By the end of this workshop you will be able to:
+
+1. **Explain** when one frontier model behind one prompt is the wrong answer for a real workload.
+2. **Decompose** an application into tasks and pick the right model per task from the Foundry catalog.
+3. **Establish** a per-task quality/cost/latency scorecard and update it after every change.
+4. **Use** Foundry evaluations — curated, batch, and online — to make model choice empirical.
+5. **Apply** synthetic data generation and fine-tuning to close a specific quality gap.
+6. **Assemble** a multi-model agent (v3) and compare versions in the portal.
+
+## Five challenges this workshop tackles
+
+Every AI team is hitting the same five walls. The eight steps are organized so each challenge gets answered once, with code:
+
+| # | Challenge | What it really means | Where the workshop answers it |
+|---|---|---|---|
+| 1 | **Model choice is exploding** | More models, providers, modalities, and deployment options than ever. | Step 0 (catalog discovery in Sweden Central) · Step 3 (decompose the workload, pick a model **per task**) |
+| 2 | **Benchmarks aren't enough** | Public benchmarks don't reflect *your* prompts, users, data, or business goals. | Step 4 (synthesize an eval grounded in your domain) · Step 5 (curated + batch evals with schema + LLM-as-judge evaluators you control) |
+| 3 | **Cost is a system-level problem** | Routing, caching, batching, prompts, tiers, observability — not just model price. | Step 3 (router) · Step 7 (multi-model assembly) · scorecard tracks per-task `$/task` and p50 latency from Step 2 onward |
+| 4 | **Production demands control** | Reliability, monitoring, safety, governance, versioning, rollback. | Step 6 (versioned fine-tune with train/val lineage) · Step 8 (portal review, red team, A/B compare v1 vs v2 vs v3, online tracing) |
+| 5 | **The landscape keeps changing** | New models arrive constantly and your app must improve without being rebuilt. | Step 3 (name deployments **by job**, not by model) · Step 6 (swap to the fine-tune is a one-line `USE_FT_POLICY = True`) |
+
+## The Foundry lifecycle — from model choice to a living AI system
+
+Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tags which lifecycle stage it advances. By Step 8 you've completed one full turn of the loop — and the same pattern is what you'll repeat every time a new model lands in the catalog.
+
+| Stage | What it means | Workshop steps |
+|---|---|---|
+| **01 · Select** | Match the model to the workload | Step 3 — *Model selection with the Foundry Skill* |
+| **02 · Evaluate** | Test on **your own** data | Step 4 (synthesize a domain-grounded eval) · Step 5 (curated + batch evals with schema + LLM-judge) |
+| **03 · Optimize** | Improve quality + latency + cost | Step 6 (fine-tune `gpt-4.1` for policy QA) · Step 7 (assemble the multi-model agent) |
+| **04 · Operate** | Monitor, govern, roll back | Step 8 — *Portal review, red-team, online evaluation, agent versions* |
+| **05 · Improve** | Adopt new models safely | Step 6 + Step 8 — *named-by-job deployments + one-line swap + A/B compare versions* |
+
+> *Steps 0–2 are the prerequisite baseline (setup, v1 in the playground, v1 in code) — the lifecycle proper begins at Step 3.*
+
+## Same scenario. Same quality. Dramatically lower cost.
+
+> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine Contoso has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
+
+| | **Before — Unoptimized (v1)** | **After — Foundry-Optimized (v3)** |
+|---|---|---|
+| **Model** | `gpt-4.1` for every call | `gpt-4.1` (planner) · `gpt-4.1-policy-ft` (policy) · `gpt-4.1-nano` (inline) |
+| **Routing** | None. Every request hits the frontier model. | Foundry **Model Router** picks per task type (`route_intent → planner / policy / inline`). |
+| **Caching** | None. Full processing every time. | System-prompt cache + semantic cache on policy Q&A (~35% hit rate). |
+| **Outputs** | Free text, parsed manually downstream. | **Schema-validated JSON** — no parsing overhead, fewer retries. |
+| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1`** on Contoso refund / baggage / visa policy. |
+| **Deploy** | Serverless for all traffic — no headroom plan. | Serverless baseline **+ PTU + automatic spillover + priority processing** on the planner. |
+| **Observability** | Print statements. | Built-in tracing, **online evaluations**, red team scans, version compare in the portal. |
+| **Cost / month** | <span style="color:#d33">**~$14,000**</span> | <span style="color:#0a0">**~$3,200  (−77%)**</span> |
+
+**Why it works:** none of these wins comes from picking a "better" single model. They come from treating the workload as a **system** — routing each task to the smallest model that meets its bar, fine-tuning where prompting plateaus, caching the repeatable parts, and putting a deployment tier under each call that matches its traffic shape. That is exactly the loop you'll run end-to-end in Steps 3 → 8.
+
+## Speaker demo flows — how this workshop maps
+
+The talk is structured as three short live demos (~4 / 4 / 5 minutes) that mirror the three audience challenges. The workshop is the **fully buildable version** of those same flows — every demo "step" lines up with a sub-section of one workshop step, so the speakers can rehearse from the workshop and the audience can re-run it later at their own pace.
+
+### Demo 1 · Select the right model  *(~4 min · Step 3)*
+
+| # | Demo beat | Workshop landing spot |
+|---|---|---|
+| 01 | **Catalog** — browse 11,000+ models across providers | Step 3 — *3.2 Ask the Foundry Skill to map jobs → models* (Skill enumerates catalog candidates per job) |
+| 02 | **Filters** — narrow by capability, modality, cost, region | Step 3 — *3.2* (Skill prompt encodes capability + cost + Sweden Central region constraints) |
+| 03 | **Model Cards** — review benchmarks, pricing, sample outputs | Step 3 — *3.2* output (model cards summarized) · Step 0 — *catalog discovery in the portal* |
+| 04 | **Shortlist** — select candidates for evaluation and testing | Step 3 — *3.3 Deploy by job* + *3.4 Wire the router* (deployments named by job, ready for evaluation in Step 5) |
+
+### Demo 2 · Validate with evidence  *(~4 min · Step 5, set up in Step 2 + Step 4)*
+
+| # | Demo beat | Workshop landing spot |
+|---|---|---|
+| 01 | **Set criteria** — define quality bar, latency budget, cost ceiling for this task | Step 2 — *scorecard* (`QUALITY_TARGET=0.92`, `COST_TARGET=$0.03`, `LATENCY_TARGET=8.0s`) referenced by every subsequent step |
+| 02 | **Load prompts** — a representative set of real production inputs | Step 4 — *synthetic eval set* (`eval-seed.jsonl`) + Step 5 — *5.3 The driver* loads it |
+| 03 | **Run comparison** — execute the prompt set against Model A and Model B in parallel | Step 5 — *5.3* (v1 baseline) and *5.4 Build v2* (router + per-task models) over the same eval set |
+| 04 | **Review results** — side-by-side outputs, scores, latency, cost — then decide | Step 5 — *5.5 Check it in the portal* (Foundry evaluations UI, side-by-side run compare) |
+
+### Demo 3 · Optimize cost and performance  *(~5 min · Step 7, building on Steps 3 + 6)*
+
+| # | Demo beat | Workshop landing spot |
+|---|---|---|
+| 01 | **Profile request** — classify incoming task by complexity, latency need, cost tolerance | Step 3 — *3.4 Wire the router* (`route_intent` returns `{planner, policy, inline}` per request) |
+| 02 | **Apply routing** — route to the matched model tier (cheap for simple, capable for complex) | Step 7 — *7.1 What's already wired* + *7.2 Run Carmen's trip end-to-end* (router dispatches to nano / mini-FT / planner) |
+| 03 | **Compare cost/quality** — same prompts through naive (single-model) and optimized (tiered) paths | Step 7 — *7.3 Run the full eval one more time* (v3 over the eval set, v1 numbers from Step 2 for the baseline column) |
+| 04 | **Review savings** — side-by-side cost delta, latency delta, quality score; see the efficiency gain | Step 7 — *7.4 Side-by-side comparison* + *7.5 Save artifacts* · Step 8 — *portal version compare* for the screenshot |
+
+> **Speaker note.** All three demos are designed to be **rehearseable from the workshop itself** — the workshop is the recording-ready long-form of what the speakers show live. Hooks to repeat in the room: *"Select"* → name your deployment by job, not by model · *"Validate"* → measure on **your** data, not a public benchmark · *"Optimize"* → the win is the **system**, not the single model.
+
+## How to run this workshop
+
+Use the [`run-workshop`](../../.agents/skills/run-workshop/SKILL.md) skill — it reveals only the step you're on and hides the rest. From the repo root, ask Copilot:
+
+> "Use the `run-workshop` skill on `workshops/foundry-models-e2e`."
+
+Need an explanation mid-step? Ask for `run-workshop/learn-more` on the term. Stuck? `run-workshop/troubleshoot` will pattern-match the Troubleshoot section of the current step. Want to know where you are? `run-workshop/check-status`.
+
+If you'd rather read straight through, the files are numbered.
+
+---
+
+## The narrative device: three progress bars
+
+Everything in this workshop moves three bars. Every step is justified by what the bars say *before* you make the change — not after.
+
+- **Quality** = pass rate on the curated eval set (LLM-as-judge, schema-validated JSON output).
+- **Cost** = $ per completed agent task (tokens × per-model rate, summed across all models used).
+- **Latency** = wall-clock p50 for a single task end-to-end.
+
+### The arc — measured in a live run on the gpt-4.1 model family
+
+```
+                    Quality     Cost/task   p50 latency
+─────────────────── ─────────── ─────────── ───────────
+v1  Single frontier  0.41        $0.023      12.5s
+v2  Multi-model      0.45        $0.006      11.0s        ← Step 5
+policy-FT  +distill  0.49 (slice) $0.003     5.1s         ← Step 6
+| v3  Full assembly    0.46         $0.006      6.5s         ← Step 7
+```
+
+Each row reflects exactly one decision:
+- **v1 → v2**: decompose the workload, route each task to the smallest model that meets its bar.
+- **v2 → policy-FT**: fine-tune the policy model using knowledge distillation (gpt-4.1 teacher → gpt-4.1-mini student). Same quality, 3× cheaper, 2× faster.
+- **v3**: assemble all three wins into the production agent and measure the compound effect.
+
+> **On the gpt-4.1 model family:** These numbers reflect an actual live run on Azure Sweden Central with gpt-4.1, gpt-4.1-mini, and gpt-4.1-nano. The model family is noticeably stronger than the gpt-4o era the workshop was originally authored against — your baseline quality will be higher than older workshop recordings suggest, which makes the cost and latency wins the more compelling story.
+
+The whole arc is: **one frontier model doing every task → the right model for each task, evaluated against a per-task scorecard.**
+
+---
+
+## What you'll touch in Foundry
+
+| Surface | What we use it for | When in the tutorial |
+|---|---|---|
+| **Foundry Portal** (low-code) | Provision project, browse the model catalog, try a prompt in the playground, review evals/red-team results, compare agent versions side-by-side | Steps 0, 1, and 8 |
+| **Foundry SDK** (code-first, Python) | Build the agent, route between models, run evals, kick off fine-tuning, deploy versions | Steps 2–7 |
+| **Foundry Skills** (AI-assisted code, e.g. Copilot CLI's `microsoft-foundry` skill) | Discover available models, deploy a model with one prompt, set up RBAC, scaffold evaluator code | Step 3 (model selection) and Step 6 (fine-tune) — but useful everywhere |
+
+> **Two MCP tools you should know:** the Foundry MCP exposes `models_list`, `model_get`, `agent_get`, `evaluation_run`, and more. The `microsoft-foundry` skill in Copilot CLI wraps these. Anywhere this tutorial says *"ask the Foundry skill to…"* you can also call those MCP tools directly.
+
+---
+
+## Steps
+
+| # | Step | Surface | What moves on the scorecard |
+|---|---|---|---|
+| 0 | [Prereqs & project](./00-setup.md) | Portal + CLI | Project provisioned · 5 deployments in `Succeeded` state |
+| 1 | [Baseline in the playground](./01-baseline-portal.md) | Portal (low-code) | v1 intuition: ~5¢/task · 3.2s · tools not wired |
+| 2 | [Baseline agent in VS Code](./02-baseline-sdk.md) | SDK | **v1 measured: quality 0.41 · $0.023/task · 12.5s p50** |
+| 3 | [Model selection with the Foundry Skill](./03-model-selection.md) | AI-assisted | Router deployed · one model per task · nano at 180ms |
+| 4 | [Synthetic dataset generation](./04-synthetic-data.md) | SDK | Eval set grown from 20 seed rows → 170 rows |
+| 5 | [Evaluations: curated, batch, online](./05-evaluations.md) | SDK | **v2: quality 0.45 · $0.006/task · 11.0s** (+10% q, −74% cost) |
+| 6 | [Fine-tune `gpt-4.1-mini` for policy (distillation)](./06-finetune.md) | SDK + Skill | **policy-FT: quality 0.49 · $0.003/task · 5.1s** (gpt-4.1 teacher → mini student) |
+| 7 | [Assemble the multi-model agent (v3)](./07-multi-model-agent.md) | SDK | **v3-final: quality 0.46 · $0.006/task · 6.5s** (+12% quality, −74% cost, −48% latency vs v1) |
+| 8 | [Back to the portal — evals, red team, versions](./08-portal-review.md) | Portal | Compare v1 vs. v2 vs. v3 side-by-side |
+
+---
+
+## Files in this folder
+
+```
+workshops/foundry-models-e2e/
+├── README.md                      ← you are here
+├── 00-setup.md
+├── 01-baseline-portal.md
+├── 02-baseline-sdk.md
+├── 03-model-selection.md
+├── 04-synthetic-data.md
+├── 05-evaluations.md
+├── 06-finetune.md
+├── 07-multi-model-agent.md
+├── 08-portal-review.md
+├── 99-recap.md
+├── sample-data/
+│   ├── travel-policy.md           ← the 2-page sample policy
+│   ├── eval-seed.jsonl            ← 20 curated rows (ground truth)
+│   ├── eval-full.jsonl            ← *(generated by Step 4)* ~200-row eval set
+│   ├── eval-policy-only.jsonl     ← policy slice for Step 6 sanity checks
+│   ├── synthetic-prompts.jsonl    ← seed prompts for §4 generation
+│   ├── policy-ft-train.jsonl      ← 91 rows (84 distilled from gpt-4.1 + originals)
+│   ├── policy-ft-val.jsonl        ← 23 held-out validation rows
+│   └── carmen-trace.json          ← the on-stage demo input
+├── slides/                        ← 45-minute training deck
+└── code/
+    ├── requirements.txt
+    ├── s02_config.py             ← shared deployments + pricing
+    ├── s02_tools_mock.py         ← mocked flight/hotel/booking tools
+    ├── s02_scorecard.py          ← prints the progress bars
+    ├── s02_baseline_agent.py     ← v1: gpt-4.1 does everything
+    ├── s03_router.py             ← gpt-4.1-nano router
+    ├── s04_generate_synthetic.py ← grow the eval set
+    ├── s05_multi_model_agent.py  ← v2/v3: planner + router + mini + ft
+    ├── s05_run_eval.py           ← curated + batch eval driver
+    ├── s06_finetune_policy.py    ← fine-tune gpt-4.1-mini on policy QA
+    └── s06_expand_ft_data.py     ← distillation pipeline: gpt-4.1 teacher generates training labels
+```
+
+Start with **[Step 0 — Prereqs & project](./00-setup.md)**. When you finish Step 8, head to **[99 — Recap](./99-recap.md)**.
+

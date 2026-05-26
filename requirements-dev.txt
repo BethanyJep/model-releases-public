@@ -1,0 +1,7 @@
+# General Dependencies
+numpy
+pandas
+ipykernel
+
+# Workshop dependencies
+-r workshops/foundry-models-e2e/code/requirements.txt
