@@ -1,4 +1,16 @@
-# s02_scorecard.py — pretty-prints the three progress bars.
+# =============================================================================
+# s02_scorecard.py — Scorecard renderer (Steps 2, 5, 6, 7)
+# =============================================================================
+# NARRATIVE ROLE
+# Every step of this workshop measures the same three dimensions: quality,
+# cost, and latency.  This module renders those numbers as a visual bar chart
+# (via Rich) so learners can see exactly which needle moved — and which
+# didn't — after each architectural change.
+#
+# The three target thresholds (QUALITY_TARGET, COST_TARGET, LATENCY_TARGET)
+# define "good enough for production".  A green ✅ only lights up when that
+# bar is met.  The goal of Steps 3-7 is to turn all three green.
+# =============================================================================
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel

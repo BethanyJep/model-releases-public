@@ -1,8 +1,28 @@
-# s05_run_eval.py — runs an agent module over an eval set, prints a scorecard,
-# and uploads results to the Foundry portal via azure-ai-evaluation.evaluate().
+# =============================================================================
+# s05_run_eval.py — Evaluation harness (Step 5, reused in Steps 6 & 7)
+# =============================================================================
+# NARRATIVE ROLE
+# Running an agent manually for one prompt tells you nothing at scale.
+# This harness runs any agent module over a JSONL eval set, applies two
+# complementary evaluators, and renders the quality/cost/latency scorecard.
+#
+# TWO-EVALUATOR DESIGN
+# • SchemaEvaluator (deterministic): checks that required JSON keys are
+#   present and that numeric constraints (budget) are not violated.
+#   Fast, zero cost, reproducible.
+# • JudgeEvaluator  (LLM-as-judge):  asks gpt-4.1 to score semantic
+#   correctness 1-5.  Catches plausible-but-wrong answers that pass schema.
+#   Final quality = 0.5 × schema + 0.5 × judge.
+#
+# Results are written to eval_results_<label>.json and surfaced in the
+# Foundry portal via azure-ai-evaluation.evaluate() for trend tracking.
+# The same script runs for v1, v2, v3, and policy-slice evals — the --label
+# flag keeps each run identifiable in the portal.
+# =============================================================================
 import argparse
 import importlib
 import json
+import os
 from statistics import mean
 
 from azure.identity import DefaultAzureCredential
@@ -11,6 +31,11 @@ from azure.ai.evaluation import evaluate
 
 from s02_config import PROJECT_ENDPOINT, DEPLOY_PLANNER
 from s02_scorecard import print_scorecard, cost_of
+
+# Project coordinates — used to log eval runs to the Foundry portal
+_SUBSCRIPTION_ID   = os.environ.get("AZURE_SUBSCRIPTION_ID", "")
+_RESOURCE_GROUP    = os.environ.get("AZURE_RESOURCE_GROUP", "")
+_PROJECT_NAME      = os.environ.get("FOUNDRY_PROJECT_NAME", "")
 
 # ── evaluators ────────────────────────────────────────────────────────────
 
@@ -30,10 +55,13 @@ class SchemaEvaluator:
                 constraints = json.loads(constraints)
             except Exception:
                 constraints = {}
+        try:
+            cost_val = float(obj.get("total_estimated_cost_usd") or 1e9)
+        except (TypeError, ValueError):
+            cost_val = 1e9
         over_budget = (
             "max_total" in constraints
-            and (obj.get("total_estimated_cost_usd") or 1e9)
-            > constraints["max_total"]
+            and cost_val > constraints["max_total"]
         )
         score = 1.0 if (not missing and not over_budget) else 0.0
         return {"schema_score": score, "missing": str(missing),
@@ -111,6 +139,9 @@ def run_eval(agent_module: str, eval_path: str, label: str) -> dict:
             "judge":  JudgeEvaluator(judge_client),
         },
         output_path=f"./eval_results_{label}.json",
+        # NOTE: azure_ai_project portal logging requires an AML-backed workspace.
+        # New Foundry projects (Microsoft.CognitiveServices) are not AML workspaces
+        # and will 404. Results are saved locally above.
     )
 
     # Aggregate from per-row outputs

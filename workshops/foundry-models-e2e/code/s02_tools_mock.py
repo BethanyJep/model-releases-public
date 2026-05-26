@@ -1,4 +1,16 @@
-# s02_tools_mock.py — canned tool responses so demos don't hit real airlines.
+# =============================================================================
+# s02_tools_mock.py — Mock tools (Steps 2, 5, 7)
+# =============================================================================
+# NARRATIVE ROLE
+# In the real world, an agent would call live booking APIs and a policy
+# retrieval system.  These mocks return plausible hard-coded data so the
+# workshop runs offline, stays deterministic, and never charges a credit card.
+#
+# The four tools mirror the four tasks identified in Step 3's task
+# decomposition: search_flights, search_hotels, check_policy, submit_booking.
+# TOOL_SCHEMAS drives the Responses API tool-calling loop; DISPATCH maps
+# function names to their Python implementations for local execution.
+# =============================================================================
 import random
 
 

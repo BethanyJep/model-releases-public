@@ -1,7 +1,29 @@
-# s06_finetune_policy.py — upload data, create fine-tune job, poll until done.
-# Uses the Azure OpenAI resource endpoint directly (project endpoint /v1 does
-# not expose fine-tuning).  The resource endpoint is derived from the project
-# endpoint: https://<account>.services.ai.azure.com → https://<account>.openai.azure.com
+# =============================================================================
+# s06_finetune_policy.py — Fine-tune gpt-4.1-mini for policy QA (Step 6)
+# =============================================================================
+# NARRATIVE ROLE
+# Step 5's eval reveals that the policy_question slice is the quality
+# laggard — the base mini model scores ~0.47 on policy rows.  This script
+# fine-tunes gpt-4.1-mini on 24 hand-authored Contoso policy Q&A pairs,
+# targeting a post-FT quality of ~0.94 on that slice.
+#
+# WHY FINE-TUNE HERE (AND NOT EARLIER)
+# The workshop waits until Step 6 because:
+#  1. Eval data (Step 4) is needed to confirm *which* task is underperforming.
+#  2. Task decomposition (Step 3) ensures the fine-tune targets exactly one
+#     deployment, with no blast radius on other parts of the agent.
+#  3. A one-boolean swap (USE_FT_POLICY in s05_multi_model_agent.py) is the
+#     entire app change — safe to A/B test in Step 8.
+#
+# IMPLEMENTATION NOTE
+# Fine-tuning uses the Azure OpenAI resource endpoint directly because the
+# Foundry project /v1 endpoint does not expose the fine-tuning API.
+# The resource endpoint is derived automatically from PROJECT_ENDPOINT.
+#
+# ⏱ TIMING: Training typically takes 30-90 minutes.  This script polls every
+# 60s.  If your Codespace sleeps, the job keeps running in the cloud — save
+# the job ID printed below and resume by asking Copilot to poll it.
+# =============================================================================
 import os, re, time
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
@@ -17,7 +39,7 @@ if not _m:
 AOAI_ENDPOINT = f"https://{_m.group(1)}.openai.azure.com/"
 AOAI_API_VERSION = "2025-01-01-preview"
 
-BASE_MODEL = "gpt-4.1"        # gpt-4.1 supports supervised fine-tuning in Sweden Central
+BASE_MODEL = "gpt-4.1-mini"   # fine-tune the small model, not the frontier model
 TRAIN_FILE = "../sample-data/policy-ft-train.jsonl"
 VAL_FILE   = "../sample-data/policy-ft-val.jsonl"
 

@@ -47,7 +47,7 @@ You haven't touched the *agent topology* since Step 5. That's intentional — th
 ```bash
 cd code
 python -c "
-import json, multi_model_agent as agent
+import json, s05_multi_model_agent as agent
 with open('../sample-data/carmen-trace.json') as f:
     carmen = json.load(f)
 out = agent.run(carmen['user_message'], image_url=carmen.get('image_url'))

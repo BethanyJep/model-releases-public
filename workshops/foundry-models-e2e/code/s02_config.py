@@ -1,18 +1,34 @@
-# s02_config.py — single source of truth for deployments and pricing.
-# Update the per-model prices from the values you verified in Step 0.
+# =============================================================================
+# s02_config.py — Workshop shared configuration (Step 2 onwards)
+# =============================================================================
+# NARRATIVE ROLE
+# This file is the single source of truth for every deployment name and
+# per-token price used across the entire workshop.  It is imported by every
+# subsequent script so that renaming a deployment or updating a price only
+# ever requires one edit.
+#
+# DESIGN DECISION — "name deployments by job, not by model"
+# Each constant below describes the *task* the deployment handles
+# (planner, router, vision, policy) rather than the underlying model.
+# This means Step 6 (fine-tune swap) and Step 7 (v3 architecture) can
+# change which model is behind a name without touching any agent code.
+# =============================================================================
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # reads .env written by s00_setup.sh
 
-PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-REGION = "swedencentral"
+PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]  # Foundry project URL
+REGION = "swedencentral"  # Azure region — must match where FT is available
 
-DEPLOY_PLANNER       = "planner-gpt41"
-DEPLOY_ROUTER        = "router-nano"
-DEPLOY_MINI_VISION   = "mini-vision"
-DEPLOY_POLICY_BASE   = "policy-mini-base"
-DEPLOY_POLICY_FT     = "policy-mini-ft"
+# Deployment names — each maps to a specific Azure OpenAI deployment.
+DEPLOY_PLANNER       = "planner-gpt41"       # gpt-4.1: orchestrator + tool caller
+DEPLOY_ROUTER        = "router-nano"          # gpt-4.1-nano: intent classifier (~50ms)
+DEPLOY_MINI_VISION   = "mini-vision"          # gpt-4.1-mini: receipt OCR
+DEPLOY_POLICY_BASE   = "policy-mini-base"     # gpt-4.1-mini: policy QA (no FT)
+DEPLOY_POLICY_FT     = os.environ.get(         # gpt-4.1-mini: policy QA (fine-tuned, Step 6)
+    "FOUNDRY_DEPLOY_POLICY_FT", "policy-mini-ft"
+)
 
 # Per-1K-token prices (illustrative — verify against your catalog).
 PRICE = {

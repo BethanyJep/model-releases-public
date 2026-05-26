@@ -1,5 +1,20 @@
-# s03_router.py — a tiny, fast classifier that names the path.
-# Uses the OpenAI Responses API with JSON-mode output.
+# =============================================================================
+# s03_router.py — Intent router: the gateway to the multi-model architecture (Step 3)
+# =============================================================================
+# NARRATIVE ROLE
+# Before any expensive model work happens, the router classifies the user's
+# request into one of three intents (plan_trip, policy_question,
+# receipt_expense) and flags whether vision or translation is needed.
+#
+# It runs on gpt-4.1-nano — the cheapest, fastest model — so this
+# classification costs fractions of a cent and adds ~50ms to total latency.
+# The returned JSON then tells the multi-model agent (s05) which specialists
+# to invoke, avoiding unnecessary calls to the expensive frontier model.
+#
+# DESIGN PATTERN
+# Temperature=0 + json_object mode makes the output fully deterministic and
+# machine-parseable.  The router never needs creativity — only precision.
+# =============================================================================
 import json
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient

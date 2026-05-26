@@ -1,5 +1,21 @@
-# s04_generate_synthetic.py — grow eval-seed.jsonl into eval-full.jsonl (~200 rows).
-# Uses the OpenAI Responses API with JSON-mode output.
+# =============================================================================
+# s04_generate_synthetic.py — Synthetic eval dataset generator (Step 4)
+# =============================================================================
+# NARRATIVE ROLE
+# A reliable eval requires breadth that hand-authored seed rows cannot
+# provide.  This script uses gpt-4.1 to expand 20 seed rows into ~170 rows
+# by varying one dimension ("axis") at a time: geography, budget edge cases,
+# language, receipt categories, and adversarial policy traps.
+#
+# WHY AXIS-BASED GENERATION
+# Varying one axis at a time makes coverage gaps explicit and prevents the
+# LLM from clustering around the easiest cases.  Adversarial rows (policy
+# traps) are especially important: they reveal whether the agent correctly
+# refuses or flags out-of-policy requests instead of silently approving them.
+#
+# The output (eval-full.jsonl) is versioned in .foundry/datasets/ so that
+# every future eval run can be traced back to the exact dataset it used.
+# =============================================================================
 import json
 import hashlib
 from azure.identity import DefaultAzureCredential

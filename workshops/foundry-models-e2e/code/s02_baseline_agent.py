@@ -1,5 +1,20 @@
-# s02_baseline_agent.py — v1: one frontier model does every task.
-# Uses the OpenAI Responses API via azure-ai-projects v2.
+# =============================================================================
+# s02_baseline_agent.py — v1 agent: single-model baseline (Step 2)
+# =============================================================================
+# NARRATIVE ROLE
+# This is the simplest possible agent: one frontier model (gpt-4.1) handles
+# every task — routing, vision, policy lookup, planning, and booking — in a
+# single tool-calling loop.  It sets the quality/cost/latency baseline that
+# all later steps measure themselves against.
+#
+# WHAT TO OBSERVE
+# • High latency: every turn calls the expensive frontier model.
+# • High cost: frontier pricing applies to all tokens, including cheap tasks.
+# • Decent quality: gpt-4.1 is capable, but the single-model approach gives
+#   no room to specialise or fine-tune individual tasks.
+#
+# Step 3 will decompose these tasks; Step 5 will show the v2 improvement.
+# =============================================================================
 import json
 import re
 import time
@@ -21,10 +36,10 @@ def run(user_message: str, image_url: str | None = None) -> dict:
 
     input_items: list[dict] = [{"role": "user", "content": user_message}]
     t0 = time.time()
-    total_in = total_out = 0
+    total_in = total_out = 0  # track tokens for cost calculation
 
     final_response = None
-    for _ in range(8):
+    for _ in range(8):  # max 8 turns; typical task resolves in 3-4
         resp = client.responses.create(
             model=DEPLOY_PLANNER,
             instructions=INSTRUCTIONS,
@@ -42,7 +57,9 @@ def run(user_message: str, image_url: str | None = None) -> dict:
         function_calls = [item for item in resp.output if item.type == "function_call"]
         if not function_calls:
             # No more tool calls — re-run once with json_object mode to get
-            # a clean JSON final answer.
+            # a clean structured JSON final answer.  The extra user message
+            # containing "json" satisfies the Responses API requirement that
+            # the word "json" appear in the input when using json_object format.
             input_items.append({
                 "role": "user",
                 "content": "Output the final itinerary as a JSON object only.",
