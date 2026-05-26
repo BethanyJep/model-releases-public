@@ -1,4 +1,4 @@
-# Right Model, Right Job — Contoso Travel Concierge
+# Right Model, Right Job — Zava Travel Concierge
 ### A live end-to-end run on Microsoft Foundry · gpt-4.1 model family · Sweden Central
 
 ---
@@ -29,7 +29,7 @@ The three decisions that drove every improvement:
 
 ## The Scenario
 
-**Carmen** is a Contoso employee travelling to Berlin for a client meeting. She submits a trip request with a parking receipt photo and asks the concierge to book flights, a hotel near Alexanderplatz, and confirm everything is within Contoso travel policy.
+**Carmen** is a Zava employee travelling to Berlin for a client meeting. She submits a trip request with a parking receipt photo and asks the concierge to book flights, a hotel near Alexanderplatz, and confirm everything is within Zava travel policy.
 
 <img src="workshops/foundry-models-e2e/assets/00-receipt.png" width="420" alt="Carmen's parking receipt — the starting artifact for every eval row" />
 
@@ -141,7 +141,7 @@ Each stage is a gate — you only proceed when the scorecard justifies it. The l
 
 ## Stage 3 — Knowledge Distillation
 
-**What we did:** The policy slice (35 rows, `intent=policy_question`) scored 0.47 with the base mini model — strong, but the model improvises on edge cases instead of citing the exact policy section. We applied knowledge distillation: `gpt-4.1` (teacher) read the Contoso travel policy and generated 84 grounded Q&A pairs across 12 policy axes. `gpt-4.1-mini` (student) was fine-tuned on those labels.
+**What we did:** The policy slice (35 rows, `intent=policy_question`) scored 0.47 with the base mini model — strong, but the model improvises on edge cases instead of citing the exact policy section. We applied knowledge distillation: `gpt-4.1` (teacher) read the Zava travel policy and generated 84 grounded Q&A pairs across 12 policy axes. `gpt-4.1-mini` (student) was fine-tuned on those labels.
 
 <img src="workshops/foundry-models-e2e/assets/03-finetuning.png" width="680" alt="Foundry portal — fine-tuning job metrics showing training and validation loss" />
 

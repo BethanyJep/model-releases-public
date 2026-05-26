@@ -74,7 +74,7 @@ TOOL_SCHEMAS = [
      }, "required": ["city", "checkin", "checkout"]}},
     {"type": "function",
      "name": "check_policy",
-     "description": "Ask a question against Contoso travel policy.",
+     "description": "Ask a question against Zava travel policy.",
      "parameters": {"type": "object", "properties": {
          "question": {"type": "string"},
      }, "required": ["question"]}},

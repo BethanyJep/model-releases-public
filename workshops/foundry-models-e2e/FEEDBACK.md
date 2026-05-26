@@ -16,7 +16,7 @@
 
 ## Step 0 — Setup
 
-- **Verify command uses hardcoded defaults instead of `.env` values.** The `az cognitiveservices account deployment list` verify command in `00-setup.md` (§0.5) hardcodes `contoso-travel-demo-foundry` and `rg-contoso-travel-demo`. It should read `FOUNDRY_ACCOUNT_NAME` and `AZURE_RESOURCE_GROUP` from `.env` (or use shell variable substitution sourced from `.env`) so learners with custom project names get a correct command without manual editing.
+- **Verify command uses hardcoded defaults instead of `.env` values.** The `az cognitiveservices account deployment list` verify command in `00-setup.md` (§0.5) hardcodes `zava-travel-demo-foundry` and `rg-zava-travel-demo`. It should read `FOUNDRY_ACCOUNT_NAME` and `AZURE_RESOURCE_GROUP` from `.env` (or use shell variable substitution sourced from `.env`) so learners with custom project names get a correct command without manual editing.
 
 ## Step 6 — Fine-tune
 

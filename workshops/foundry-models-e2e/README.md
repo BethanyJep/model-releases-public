@@ -1,4 +1,4 @@
-# Right Model, Right Job — Contoso Travel Concierge
+# Right Model, Right Job — Zava Travel Concierge
 
 > Workshop slug: `foundry-models-e2e` · Workshop 0 (the Foundry-Models-E2E narrative)
 
@@ -47,7 +47,7 @@ Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tag
 
 ## Same scenario. Same quality. Dramatically lower cost.
 
-> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine Contoso has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
+> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine Zava has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
 
 | | **Before — Unoptimized (v1)** | **After — Foundry-Optimized (v3)** |
 |---|---|---|
@@ -55,7 +55,7 @@ Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tag
 | **Routing** | None. Every request hits the frontier model. | Foundry **Model Router** picks per task type (`route_intent → planner / policy / inline`). |
 | **Caching** | None. Full processing every time. | System-prompt cache + semantic cache on policy Q&A (~35% hit rate). |
 | **Outputs** | Free text, parsed manually downstream. | **Schema-validated JSON** — no parsing overhead, fewer retries. |
-| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1`** on Contoso refund / baggage / visa policy. |
+| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1`** on Zava refund / baggage / visa policy. |
 | **Deploy** | Serverless for all traffic — no headroom plan. | Serverless baseline **+ PTU + automatic spillover + priority processing** on the planner. |
 | **Observability** | Print statements. | Built-in tracing, **online evaluations**, red team scans, version compare in the portal. |
 | **Cost / month** | <span style="color:#d33">**~$14,000**</span> | <span style="color:#0a0">**~$3,200  (−77%)**</span> |

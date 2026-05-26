@@ -34,7 +34,7 @@ TRAIN_IN      = "../sample-data/policy-ft-train.jsonl"
 VAL_IN        = "../sample-data/policy-ft-val.jsonl"
 TRAIN_OUT     = "../sample-data/policy-ft-train.jsonl"
 VAL_OUT       = "../sample-data/policy-ft-val.jsonl"
-SYSTEM_PROMPT = "You answer Contoso travel policy questions. Concise."
+SYSTEM_PROMPT = "You answer Zava travel policy questions. Concise."
 
 AXES = [
     ("Section 2 — booking windows",        "domestic vs international advance booking, emergency exceptions"),
