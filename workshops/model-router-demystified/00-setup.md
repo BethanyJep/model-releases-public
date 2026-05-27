@@ -92,7 +92,7 @@ az cognitiveservices account deployment create \
 ### 0.4 — Configure credentials
 
 ```bash
-cd workshops/model-router-workshop/code
+cd workshops/model-router-demystified/code
 cp .env.example .env
 ```
 

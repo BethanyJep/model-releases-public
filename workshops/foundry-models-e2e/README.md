@@ -101,6 +101,11 @@ Use the [`run-workshop`](../../.agents/skills/run-workshop/SKILL.md) skill — i
 
 > "Use the `run-workshop` skill on `workshops/foundry-models-e2e`."
 
+**Modes:**
+- `"Run workshop as learner"` — you run every command, Copilot guides and tracks progress with visual scorecards. Feedback capture is active.
+- `"Run workshop as instructor"` — faster pacing for demos. Copilot may run commands. Feedback is logged for post-session fixes.
+- Default (no mode specified) — same as learner behavior for commands.
+
 Need an explanation mid-step? Ask for `run-workshop/learn-more` on the term. Stuck? `run-workshop/troubleshoot` will pattern-match the Troubleshoot section of the current step. Want to know where you are? `run-workshop/check-status`.
 
 If you'd rather read straight through, the files are numbered.
@@ -134,6 +139,8 @@ Each row reflects exactly one decision:
 > **On the gpt-4.1 model family:** These numbers reflect an actual live run on Azure Sweden Central with gpt-4.1, gpt-4.1-mini, and gpt-4.1-nano. The model family is noticeably stronger than the gpt-4o era the workshop was originally authored against — your baseline quality will be higher than older workshop recordings suggest, which makes the cost and latency wins the more compelling story.
 
 The whole arc is: **one frontier model doing every task → the right model for each task, evaluated against a per-task scorecard.**
+
+> **🧗 Hill climbing in model optimization.** Each row in the scorecard is one step up the hill. "Hill climbing" means making a single change (swap a model, add a route, enable caching), measuring whether it improves the scorecard, and keeping it only if it does. You never leap — you take one step, measure, and decide. If the scorecard gets worse, you roll back and try a different direction. This workshop is structured as a hill climb: v1 → v2 → v3, one decision at a time, each justified by the numbers that came before it.
 
 ---
 

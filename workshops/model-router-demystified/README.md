@@ -1,8 +1,8 @@
 # One Endpoint, Smarter Spend — Model Router Deep-Dive
 
-> Workshop slug: `model-router-workshop` · Workshop 1 (the Model Router narrative)
+> Workshop slug: `model-router-demystified` · Workshop 1 (the Model Router narrative)
 
-This is the **hands-on companion** to [`model-router-workshop-plan.md`](../../.plans/model-router-workshop-plan.md) (the original PLAN). Follow it end-to-end and you'll deploy, evaluate, and optimize the Foundry Model Router — proving the "better, cheaper, faster" story empirically with zero routing code.
+This is the **hands-on companion** to [`model-router-demystified-plan.md`](../../.plans/model-router-demystified-plan.md) (the original PLAN). Follow it end-to-end and you'll deploy, evaluate, and optimize the Foundry Model Router — proving the "better, cheaper, faster" story empirically with zero routing code.
 
 > **Audience:** developers/architects who know LLMs but are new to Model Router.
 > **Region:** Sweden Central. **Deployment type:** Global Standard.
@@ -68,11 +68,18 @@ v4  Router + subset tuned  4.3       $0.009      1.8s          4.1
 
 > Numbers are illustrative — you'll measure your own.
 
+> **🧗 Hill climbing in model optimization.** The scorecard arc above is a "hill climb" — each row represents one configuration change (switch routing mode, narrow the model subset, enable caching), measured against the previous row. You keep a change only if the scorecard improves; otherwise you roll back and try a different lever. This incremental, evidence-driven loop is how you find the optimal operating point without guessing. Every lab in this workshop is one step up the hill.
+
 ## How to run this workshop
 
 Use the [`run-workshop`](../../.agents/skills/run-workshop/SKILL.md) skill — it reveals only the step you're on:
 
-> "Use the `run-workshop` skill on `workshops/model-router-workshop`."
+> "Use the `run-workshop` skill on `workshops/model-router-demystified`."
+
+**Modes:**
+- `"Run workshop as learner"` — you run every command, Copilot guides and tracks progress with visual scorecards. Feedback capture is active.
+- `"Run workshop as instructor"` — faster pacing for demos. Copilot may run commands. Feedback is logged for post-session fixes.
+- Default (no mode specified) — same as learner behavior for commands.
 
 Or read straight through — the files are numbered.
 
@@ -93,7 +100,7 @@ Or read straight through — the files are numbered.
 ## Files in this folder
 
 ```
-workshops/model-router-workshop/
+workshops/model-router-demystified/
 ├── README.md                           ← you are here
 ├── 00-setup.md
 ├── 01-prompt-set.md

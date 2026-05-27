@@ -282,18 +282,18 @@ The Model Router workshop proves the same "better, cheaper, faster" story with *
 | **Routing code** | Custom function | None | **Zero** |
 
 ```bash
-cd workshops/model-router-workshop
+cd workshops/model-router-demystified
 # Then ask GitHub Copilot:
-# "Use the run-workshop skill on workshops/model-router-workshop"
+# "Use the run-workshop skill on workshops/model-router-demystified"
 ```
 
 | Lab | What you'll build | Time |
 |---|---|---|
-| [00 — Setup](workshops/model-router-workshop/00-setup.md) | Router + baseline deployed | 15 min |
-| [01 — Prompt set](workshops/model-router-workshop/01-prompt-set.md) | 50+ tagged representative prompts | 10 min |
-| [02 — Deploy router](workshops/model-router-workshop/02-deploy-router.md) | Modes, subset, response inspection | 15 min |
-| [03 — Comparison](workshops/model-router-workshop/03-baseline-comparison.md) | Baseline vs. router eval + model distribution | 20 min |
-| [04 — Custom evaluator](workshops/model-router-workshop/04-custom-evaluator.md) | Policy-Adherence eval-rubric (adaptive) | 25 min |
-| [05 — Optimize](workshops/model-router-workshop/05-optimize-modes.md) | Balanced / Cost / Quality mode comparison | 20 min |
-| [06 — Caching](workshops/model-router-workshop/06-prompt-caching.md) | Prompt caching + compound savings | 15 min |
-| [07 — Operate](workshops/model-router-workshop/07-operate.md) | Failover, continuous eval, portal | 15 min |
+| [00 — Setup](workshops/model-router-demystified/00-setup.md) | Router + baseline deployed | 15 min |
+| [01 — Prompt set](workshops/model-router-demystified/01-prompt-set.md) | 50+ tagged representative prompts | 10 min |
+| [02 — Deploy router](workshops/model-router-demystified/02-deploy-router.md) | Modes, subset, response inspection | 15 min |
+| [03 — Comparison](workshops/model-router-demystified/03-baseline-comparison.md) | Baseline vs. router eval + model distribution | 20 min |
+| [04 — Custom evaluator](workshops/model-router-demystified/04-custom-evaluator.md) | Policy-Adherence eval-rubric (adaptive) | 25 min |
+| [05 — Optimize](workshops/model-router-demystified/05-optimize-modes.md) | Balanced / Cost / Quality mode comparison | 20 min |
+| [06 — Caching](workshops/model-router-demystified/06-prompt-caching.md) | Prompt caching + compound savings | 15 min |
+| [07 — Operate](workshops/model-router-demystified/07-operate.md) | Failover, continuous eval, portal | 15 min |

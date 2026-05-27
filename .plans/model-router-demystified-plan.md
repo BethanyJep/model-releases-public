@@ -423,7 +423,7 @@ v4  Router + subset tuned  4.3       $0.009      1.8s          4.1
 ## File structure (planned)
 
 ```
-workshops/model-router-workshop/
+workshops/model-router-demystified/
 ├── README.md
 ├── 00-setup.md
 ├── 01-prompt-set.md
@@ -475,3 +475,31 @@ workshops/model-router-workshop/
 ---
 
 *Last updated: 2026-05-27*
+
+---
+
+## Addendum — Skill enhancements (2025-05-27)
+
+### Workshop renamed
+
+`model-router-workshop` → **`model-router-demystified`** (slug, folder, all references).
+
+### `run-workshop` skill: modes added
+
+| Mode | Trigger | Key behavior |
+|---|---|---|
+| Default | "Run workshop X" | Learner runs all commands, Copilot guides |
+| **Learner** | "as learner" | + Feedback capture + granular `progress.<ts>.json` + visual scorecards |
+| **Instructor** | "as instructor" | + Copilot may run commands + faster pacing + feedback → post-run fixes |
+
+### Visual scorecards
+
+The skill now displays ASCII-art scorecards at major step boundaries showing quality/cost/latency/custom metrics with progress bars and deltas. Scorecards are persisted in the progress file.
+
+### Hill-climbing note
+
+Both workshop READMEs now include a "Hill climbing in model optimization" callout explaining the incremental evidence-driven optimization loop.
+
+### Artifact sync reminder
+
+If `run-workshop` SKILL.md or the instructor-mode subskill is updated, verify both workshop READMEs reflect the same "How to run" section and mode descriptions.
