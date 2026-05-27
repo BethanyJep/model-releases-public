@@ -16,11 +16,24 @@
 #   2. Student is fine-tuned on teacher outputs (not just human labels).
 #   3. At inference time, only the student runs — frontier cost eliminated.
 #
-# The 24 hand-authored seed rows remain in the dataset as ground-truth anchors.
-# The ~80 teacher-generated rows add coverage across all policy sections and
-# adversarial traps that the seed set doesn't reach.
+# Hand-authored anchor rows (kept in policy-ft-seeds-{train,val}.jsonl, if
+# present) are merged with the ~80 teacher-generated rows so the student sees
+# both ground-truth and broad-coverage examples.
+#
+# IDEMPOTENCY (fixed 2026-05-27)
+# Earlier versions used the same path for input and output, causing each run
+# to load the previous run's output and APPEND, silently doubling the dataset.
+# Now: SEEDS are READ-ONLY inputs at a distinct path; TRAIN_OUT/VAL_OUT are
+# always overwritten fresh. Safe to re-run any number of times.
+#
+# If you want to lock in your current train/val as the canonical seed set
+# before this fix takes effect, run once:
+#   cp ../sample-data/policy-ft-train.jsonl ../sample-data/policy-ft-seeds-train.jsonl
+#   cp ../sample-data/policy-ft-val.jsonl   ../sample-data/policy-ft-seeds-val.jsonl
+# Otherwise the script will generate the dataset purely from AXES (no anchors).
 # =============================================================================
 import json
+import os
 import random
 import re
 from pathlib import Path
@@ -30,11 +43,19 @@ from azure.ai.projects import AIProjectClient
 from s02_config import PROJECT_ENDPOINT, DEPLOY_PLANNER
 
 POLICY_PATH   = "../sample-data/travel-policy.md"
-TRAIN_IN      = "../sample-data/policy-ft-train.jsonl"
-VAL_IN        = "../sample-data/policy-ft-val.jsonl"
+# READ-ONLY seed inputs (optional). Override via env vars for experiments.
+SEED_TRAIN    = os.environ.get("FT_SEED_TRAIN", "../sample-data/policy-ft-seeds-train.jsonl")
+SEED_VAL      = os.environ.get("FT_SEED_VAL",   "../sample-data/policy-ft-seeds-val.jsonl")
+# Outputs — always overwritten fresh on each run.
 TRAIN_OUT     = "../sample-data/policy-ft-train.jsonl"
 VAL_OUT       = "../sample-data/policy-ft-val.jsonl"
 SYSTEM_PROMPT = "You answer Zava travel policy questions. Concise."
+
+# Safety guard: refuse to clobber seed files if someone misconfigures paths.
+assert os.path.realpath(SEED_TRAIN) != os.path.realpath(TRAIN_OUT), \
+    f"SEED_TRAIN ({SEED_TRAIN}) must differ from TRAIN_OUT ({TRAIN_OUT}) — outputs are overwritten each run."
+assert os.path.realpath(SEED_VAL)   != os.path.realpath(VAL_OUT), \
+    f"SEED_VAL ({SEED_VAL}) must differ from VAL_OUT ({VAL_OUT}) — outputs are overwritten each run."
 
 AXES = [
     ("Section 2 — booking windows",        "domestic vs international advance booking, emergency exceptions"),
@@ -72,7 +93,10 @@ Return JSON: {{"pairs": [{{"q": "...", "a": "..."}}]}}"""
 
 
 def load_jsonl(path: str) -> list[dict]:
-    return [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+    p = Path(path)
+    if not p.exists():
+        return []   # seeds are optional — empty pool is fine
+    return [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
 
 
 def to_row(q: str, a: str) -> dict:
@@ -95,10 +119,16 @@ def dedup(rows: list[dict], seen_qs: set) -> list[dict]:
 
 def main():
     policy = Path(POLICY_PATH).read_text()
-    existing_rows = load_jsonl(TRAIN_IN) + load_jsonl(VAL_IN)
-    seen_qs = {r["messages"][1]["content"].strip().lower() for r in existing_rows}
+    seed_rows = load_jsonl(SEED_TRAIN) + load_jsonl(SEED_VAL)
+    if seed_rows:
+        print(f"Loaded {len(seed_rows)} hand-authored seed rows from "
+              f"{Path(SEED_TRAIN).name} + {Path(SEED_VAL).name}")
+    else:
+        print("No seed files found — generating dataset purely from AXES. "
+              "(Place anchor rows at policy-ft-seeds-{train,val}.jsonl to include them.)")
+    seen_qs = {r["messages"][1]["content"].strip().lower() for r in seed_rows}
     existing_snippet = "\n".join(
-        f"Q: {r['messages'][1]['content']}" for r in existing_rows)
+        f"Q: {r['messages'][1]['content']}" for r in seed_rows)
 
     project = AIProjectClient(endpoint=PROJECT_ENDPOINT,
                               credential=DefaultAzureCredential())
@@ -136,12 +166,13 @@ def main():
         except Exception as e:
             print(f"    ERROR on {axis_name}: {e}")
 
-    # Merge all + shuffle
-    all_rows = existing_rows + new_rows
+    # Merge seeds + freshly-generated, shuffle, 80/20 split.
+    # NOTE: TRAIN_OUT/VAL_OUT are OVERWRITTEN (never appended) so the script
+    # is safe to re-run any number of times without compounding the dataset.
+    all_rows = seed_rows + new_rows
     random.seed(42)
     random.shuffle(all_rows)
 
-    # 80/20 split
     split = int(len(all_rows) * 0.8)
     train, val = all_rows[:split], all_rows[split:]
 
@@ -149,7 +180,8 @@ def main():
     Path(VAL_OUT).write_text(  "\n".join(json.dumps(r) for r in val)   + "\n")
 
     print(f"\nDone. {len(train)} train / {len(val)} val "
-          f"({len(all_rows)} total, {len(new_rows)} new)")
+          f"({len(all_rows)} total = {len(seed_rows)} seed + {len(new_rows)} generated)")
+    print(f"Wrote: {TRAIN_OUT}\n       {VAL_OUT}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+# Workshop run artifacts — regenerated every demo replay, do not commit.
+code/generated/
+
+# Local progress + feedback (learner-mode workshop runs)
+progress.*.json
+.do-not-commit/

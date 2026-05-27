@@ -23,6 +23,7 @@ import argparse
 import importlib
 import json
 import os
+from pathlib import Path
 from statistics import mean
 
 from azure.identity import DefaultAzureCredential
@@ -31,6 +32,10 @@ from azure.ai.evaluation import evaluate
 
 from s02_config import PROJECT_ENDPOINT, DEPLOY_PLANNER
 from s02_scorecard import print_scorecard, cost_of
+
+# All generated artifacts land here so a single .gitignore entry covers them.
+GENERATED_DIR = Path(__file__).parent / "generated"
+GENERATED_DIR.mkdir(exist_ok=True)
 
 # Project coordinates — used to log eval runs to the Foundry portal
 _SUBSCRIPTION_ID   = os.environ.get("AZURE_SUBSCRIPTION_ID", "")
@@ -138,7 +143,7 @@ def run_eval(agent_module: str, eval_path: str, label: str) -> dict:
             "schema": SchemaEvaluator(),
             "judge":  JudgeEvaluator(judge_client),
         },
-        output_path=f"./eval_results_{label}.json",
+        output_path=str(GENERATED_DIR / f"eval_results_{label}.json"),
         # NOTE: azure_ai_project portal logging requires an AML-backed workspace.
         # New Foundry projects (Microsoft.CognitiveServices) are not AML workspaces
         # and will 404. Results are saved locally above.

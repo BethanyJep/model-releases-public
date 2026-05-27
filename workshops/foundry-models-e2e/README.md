@@ -208,8 +208,31 @@ workshops/foundry-models-e2e/
     ├── s05_multi_model_agent.py  ← v2/v3: planner + router + mini + ft
     ├── s05_run_eval.py           ← curated + batch eval driver
     ├── s06_finetune_policy.py    ← fine-tune gpt-4.1-mini on policy QA
-    └── s06_expand_ft_data.py     ← distillation pipeline: gpt-4.1 teacher generates training labels
+    ├── s06_expand_ft_data.py     ← distillation pipeline: gpt-4.1 teacher generates training labels
+    ├── s06_policy_only_eval.py   ← isolated base-vs-FT scorecard (deterministic, no LLM judge)
+    ├── s99_replay_demo.sh        ← interactive demo-replay driver (see RERUN.md)
+    └── generated/                 ← all eval_results_*.json + traces (gitignored)
 ```
 
 Start with **[Step 0 — Prereqs & project](./00-setup.md)**. When you finish Step 8, head to **[99 — Recap](./99-recap.md)**.
+
+---
+
+## Re-running for a clean recorded demo
+
+Once you've completed the workshop once (resources provisioned, FT model deployed, datasets generated), you can replay the **code-only path** in ~20 minutes to regenerate clean scorecards for a recording — no setup, no fine-tuning, no portal clicks.
+
+```bash
+cd workshops/foundry-models-e2e/code
+source ../.venv/bin/activate
+./s99_replay_demo.sh           # interactive: ENTER to run each stage, s=skip, q=quit
+```
+
+Full details, file provenance, parallel-terminal recipes, and troubleshooting are in **[RERUN.md](./RERUN.md)**.
+
+### Conventions used by the replay tooling
+
+- **`code/generated/`** — every eval result, trace dump, and intermediate artifact lands here. The folder is `.gitignore`d so nothing committed gets dirty. Wipe with `rm -rf code/generated` for a full reset.
+- **Timestamped result files** — the replay script names outputs `eval_results_<label>-<UTC-timestamp>.json` so prior runs are never clobbered and runs can be diffed.
+- **`s06_expand_ft_data.py` is now idempotent.** Earlier versions read and wrote the same `policy-ft-{train,val}.jsonl` paths, which silently *doubled* the dataset on every re-run. The fixed version reads optional seeds from `policy-ft-seeds-{train,val}.jsonl` and always overwrites outputs fresh. Safe to re-run any number of times. See header of [`code/s06_expand_ft_data.py`](./code/s06_expand_ft_data.py).
 
