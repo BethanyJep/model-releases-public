@@ -14,10 +14,10 @@
 #   correctness 1-5.  Catches plausible-but-wrong answers that pass schema.
 #   Final quality = 0.5 × schema + 0.5 × judge.
 #
-# Results are written to eval_results_<label>.json and surfaced in the
-# Foundry portal via azure-ai-evaluation.evaluate() for trend tracking.
-# The same script runs for v1, v2, v3, and policy-slice evals — the --label
-# flag keeps each run identifiable in the portal.
+# Results are written to generated/eval_results_<label>.json AND uploaded to
+# the Foundry portal (Evaluations tab) via azure-ai-evaluation.evaluate() when
+# PROJECT_ENDPOINT is set. The --label flag keeps each run identifiable in
+# the portal so v1/v2/v3 trend side-by-side.
 # =============================================================================
 import argparse
 import importlib
@@ -136,18 +136,30 @@ def run_eval(agent_module: str, eval_path: str, label: str) -> dict:
             return {"answer": "", "latency_s": 30.0, "usage_json": "{}"}
 
     print(f"\nRunning eval '{label}' on {n} rows...\n")
-    results = evaluate(
+    # azure-ai-evaluation 1.16+ accepts the new Foundry (OneDP) project
+    # endpoint URL directly as `azure_ai_project`. When provided, evaluate()
+    # uploads the run to the project's Evaluations tab in ai.azure.com so
+    # v1/v2/v3 runs trend together in the portal. Without it, results stay
+    # local only.
+    eval_kwargs = dict(
         data=eval_path,
         target=target,
         evaluators={
             "schema": SchemaEvaluator(),
             "judge":  JudgeEvaluator(judge_client),
         },
+        evaluation_name=f"foundry-e2e-{label}",
         output_path=str(GENERATED_DIR / f"eval_results_{label}.json"),
-        # NOTE: azure_ai_project portal logging requires an AML-backed workspace.
-        # New Foundry projects (Microsoft.CognitiveServices) are not AML workspaces
-        # and will 404. Results are saved locally above.
+        tags={"workshop": "foundry-models-e2e", "label": label},
     )
+    if PROJECT_ENDPOINT:
+        eval_kwargs["azure_ai_project"] = PROJECT_ENDPOINT
+        print(f"  → uploading to Foundry portal: {PROJECT_ENDPOINT}")
+    results = evaluate(**eval_kwargs)
+
+    studio_url = results.get("studio_url")
+    if studio_url:
+        print(f"\n  📊 Portal: {studio_url}\n")
 
     # Aggregate from per-row outputs
     rows_out = results.get("rows", [])
