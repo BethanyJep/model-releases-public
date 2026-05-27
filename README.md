@@ -1,4 +1,4 @@
-# Right Model, Right Job — Contoso Travel Concierge
+# Right Model, Right Job — Zava Travel Concierge
 ### A live end-to-end run on Microsoft Foundry · gpt-4.1 model family · Sweden Central
 
 ---
@@ -29,7 +29,7 @@ The three decisions that drove every improvement:
 
 ## The Scenario
 
-**Carmen** is a Contoso employee travelling to Berlin for a client meeting. She submits a trip request with a parking receipt photo and asks the concierge to book flights, a hotel near Alexanderplatz, and confirm everything is within Contoso travel policy.
+**Carmen** is a Zava employee travelling to Berlin for a client meeting. She submits a trip request with a parking receipt photo and asks the concierge to book flights, a hotel near Alexanderplatz, and confirm everything is within Zava travel policy.
 
 <img src="workshops/foundry-models-e2e/assets/00-receipt.png" width="420" alt="Carmen's parking receipt — the starting artifact for every eval row" />
 
@@ -141,7 +141,7 @@ Each stage is a gate — you only proceed when the scorecard justifies it. The l
 
 ## Stage 3 — Knowledge Distillation
 
-**What we did:** The policy slice (35 rows, `intent=policy_question`) scored 0.47 with the base mini model — strong, but the model improvises on edge cases instead of citing the exact policy section. We applied knowledge distillation: `gpt-4.1` (teacher) read the Contoso travel policy and generated 84 grounded Q&A pairs across 12 policy axes. `gpt-4.1-mini` (student) was fine-tuned on those labels.
+**What we did:** The policy slice (35 rows, `intent=policy_question`) scored 0.47 with the base mini model — strong, but the model improvises on edge cases instead of citing the exact policy section. We applied knowledge distillation: `gpt-4.1` (teacher) read the Zava travel policy and generated 84 grounded Q&A pairs across 12 policy axes. `gpt-4.1-mini` (student) was fine-tuned on those labels.
 
 <img src="workshops/foundry-models-e2e/assets/03-finetuning.png" width="680" alt="Foundry portal — fine-tuning job metrics showing training and validation loss" />
 
@@ -265,3 +265,35 @@ cd model-releases/workshops/foundry-models-e2e
 | [06 — Fine-tune](workshops/foundry-models-e2e/06-finetune.md) | Distillation pipeline · policy-FT | 60 min + wait |
 | [07 — Assemble v3](workshops/foundry-models-e2e/07-multi-model-agent.md) | v3 scorecard · end-of-talk slide | 30 min |
 | [08 — Portal review](workshops/foundry-models-e2e/08-portal-review.md) | Evals · red team · version compare | 30 min |
+
+---
+
+## Workshop 2: One Endpoint, Smarter Spend — Model Router Deep-Dive
+
+> **Audience:** developers/architects who know LLMs but are new to Model Router · **Time:** ~2 hours · **Region:** Sweden Central
+
+The Model Router workshop proves the same "better, cheaper, faster" story with **zero routing code**. Instead of building a custom router, you deploy a single Model Router endpoint and let it intelligently route each prompt to the optimal model.
+
+| | v1 — Single Frontier | v5 — Router + Subset + Cache | Δ |
+|---|---|---|---|
+| **Quality** | 4.3 / 5.0 | 4.3 / 5.0 | ±0% |
+| **Cost / request** | $0.028 | $0.009 | **−68%** |
+| **Latency p50** | 3.2 s | 1.8 s | **−44%** |
+| **Routing code** | Custom function | None | **Zero** |
+
+```bash
+cd workshops/model-router-demystified
+# Then ask GitHub Copilot:
+# "Use the run-workshop skill on workshops/model-router-demystified"
+```
+
+| Lab | What you'll build | Time |
+|---|---|---|
+| [00 — Setup](workshops/model-router-demystified/00-setup.md) | Router + baseline deployed | 15 min |
+| [01 — Prompt set](workshops/model-router-demystified/01-prompt-set.md) | 50+ tagged representative prompts | 10 min |
+| [02 — Deploy router](workshops/model-router-demystified/02-deploy-router.md) | Modes, subset, response inspection | 15 min |
+| [03 — Comparison](workshops/model-router-demystified/03-baseline-comparison.md) | Baseline vs. router eval + model distribution | 20 min |
+| [04 — Custom evaluator](workshops/model-router-demystified/04-custom-evaluator.md) | Policy-Adherence eval-rubric (adaptive) | 25 min |
+| [05 — Optimize](workshops/model-router-demystified/05-optimize-modes.md) | Balanced / Cost / Quality mode comparison | 20 min |
+| [06 — Caching](workshops/model-router-demystified/06-prompt-caching.md) | Prompt caching + compound savings | 15 min |
+| [07 — Operate](workshops/model-router-demystified/07-operate.md) | Failover, continuous eval, portal | 15 min |

@@ -435,6 +435,7 @@ FodyWeavers.xsd
 # `run-workshop` skills. Source of truth for "what's done"; not for git.
 models/*/.progress.json
 workshops/*/.progress.json
+workshops/*/progress.*.json
 
 # Python virtual envs and local Foundry scratch
 .venv/

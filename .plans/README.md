@@ -25,3 +25,4 @@ cluttering the learner-facing files.
 | Plan | Content |
 |---|---|
 | [`foundry-models-e2e-plan.md`](./foundry-models-e2e-plan.md) | [`../workshops/foundry-models-e2e/`](../workshops/foundry-models-e2e/) |
+| [`model-router-demystified-plan.md`](./model-router-demystified-plan.md) | [`../workshops/model-router-demystified/`](../workshops/model-router-demystified/) |

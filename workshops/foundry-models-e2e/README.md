@@ -1,4 +1,4 @@
-# Right Model, Right Job — Contoso Travel Concierge
+# Right Model, Right Job — Zava Travel Concierge
 
 > Workshop slug: `foundry-models-e2e` · Workshop 0 (the Foundry-Models-E2E narrative)
 
@@ -47,7 +47,7 @@ Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tag
 
 ## Same scenario. Same quality. Dramatically lower cost.
 
-> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine Contoso has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
+> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine Zava has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
 
 | | **Before — Unoptimized (v1)** | **After — Foundry-Optimized (v3)** |
 |---|---|---|
@@ -55,7 +55,7 @@ Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tag
 | **Routing** | None. Every request hits the frontier model. | Foundry **Model Router** picks per task type (`route_intent → planner / policy / inline`). |
 | **Caching** | None. Full processing every time. | System-prompt cache + semantic cache on policy Q&A (~35% hit rate). |
 | **Outputs** | Free text, parsed manually downstream. | **Schema-validated JSON** — no parsing overhead, fewer retries. |
-| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1`** on Contoso refund / baggage / visa policy. |
+| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1`** on Zava refund / baggage / visa policy. |
 | **Deploy** | Serverless for all traffic — no headroom plan. | Serverless baseline **+ PTU + automatic spillover + priority processing** on the planner. |
 | **Observability** | Print statements. | Built-in tracing, **online evaluations**, red team scans, version compare in the portal. |
 | **Cost / month** | <span style="color:#d33">**~$14,000**</span> | <span style="color:#0a0">**~$3,200  (−77%)**</span> |
@@ -101,6 +101,11 @@ Use the [`run-workshop`](../../.agents/skills/run-workshop/SKILL.md) skill — i
 
 > "Use the `run-workshop` skill on `workshops/foundry-models-e2e`."
 
+**Modes:**
+- `"Run workshop as learner"` — you run every command, Copilot guides and tracks progress with visual scorecards. Feedback capture is active.
+- `"Run workshop as instructor"` — faster pacing for demos. Copilot may run commands. Feedback is logged for post-session fixes.
+- Default (no mode specified) — same as learner behavior for commands.
+
 Need an explanation mid-step? Ask for `run-workshop/learn-more` on the term. Stuck? `run-workshop/troubleshoot` will pattern-match the Troubleshoot section of the current step. Want to know where you are? `run-workshop/check-status`.
 
 If you'd rather read straight through, the files are numbered.
@@ -134,6 +139,8 @@ Each row reflects exactly one decision:
 > **On the gpt-4.1 model family:** These numbers reflect an actual live run on Azure Sweden Central with gpt-4.1, gpt-4.1-mini, and gpt-4.1-nano. The model family is noticeably stronger than the gpt-4o era the workshop was originally authored against — your baseline quality will be higher than older workshop recordings suggest, which makes the cost and latency wins the more compelling story.
 
 The whole arc is: **one frontier model doing every task → the right model for each task, evaluated against a per-task scorecard.**
+
+> **🧗 Hill climbing in model optimization.** Each row in the scorecard is one step up the hill. "Hill climbing" means making a single change (swap a model, add a route, enable caching), measuring whether it improves the scorecard, and keeping it only if it does. You never leap — you take one step, measure, and decide. If the scorecard gets worse, you roll back and try a different direction. This workshop is structured as a hill climb: v1 → v2 → v3, one decision at a time, each justified by the numbers that came before it.
 
 ---
 
@@ -201,8 +208,31 @@ workshops/foundry-models-e2e/
     ├── s05_multi_model_agent.py  ← v2/v3: planner + router + mini + ft
     ├── s05_run_eval.py           ← curated + batch eval driver
     ├── s06_finetune_policy.py    ← fine-tune gpt-4.1-mini on policy QA
-    └── s06_expand_ft_data.py     ← distillation pipeline: gpt-4.1 teacher generates training labels
+    ├── s06_expand_ft_data.py     ← distillation pipeline: gpt-4.1 teacher generates training labels
+    ├── s06_policy_only_eval.py   ← isolated base-vs-FT scorecard (deterministic, no LLM judge)
+    ├── s99_replay_demo.sh        ← interactive demo-replay driver (see RERUN.md)
+    └── generated/                 ← all eval_results_*.json + traces (gitignored)
 ```
 
 Start with **[Step 0 — Prereqs & project](./00-setup.md)**. When you finish Step 8, head to **[99 — Recap](./99-recap.md)**.
+
+---
+
+## Re-running for a clean recorded demo
+
+Once you've completed the workshop once (resources provisioned, FT model deployed, datasets generated), you can replay the **code-only path** in ~20 minutes to regenerate clean scorecards for a recording — no setup, no fine-tuning, no portal clicks.
+
+```bash
+cd workshops/foundry-models-e2e/code
+source ../.venv/bin/activate
+./s99_replay_demo.sh           # interactive: ENTER to run each stage, s=skip, q=quit
+```
+
+Full details, file provenance, parallel-terminal recipes, and troubleshooting are in **[RERUN.md](./RERUN.md)**.
+
+### Conventions used by the replay tooling
+
+- **`code/generated/`** — every eval result, trace dump, and intermediate artifact lands here. The folder is `.gitignore`d so nothing committed gets dirty. Wipe with `rm -rf code/generated` for a full reset.
+- **Timestamped result files** — the replay script names outputs `eval_results_<label>-<UTC-timestamp>.json` so prior runs are never clobbered and runs can be diffed.
+- **`s06_expand_ft_data.py` is now idempotent.** Earlier versions read and wrote the same `policy-ft-{train,val}.jsonl` paths, which silently *doubled* the dataset on every re-run. The fixed version reads optional seeds from `policy-ft-seeds-{train,val}.jsonl` and always overwrites outputs fresh. Safe to re-run any number of times. See header of [`code/s06_expand_ft_data.py`](./code/s06_expand_ft_data.py).
 
