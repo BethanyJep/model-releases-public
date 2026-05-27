@@ -265,3 +265,35 @@ cd model-releases/workshops/foundry-models-e2e
 | [06 — Fine-tune](workshops/foundry-models-e2e/06-finetune.md) | Distillation pipeline · policy-FT | 60 min + wait |
 | [07 — Assemble v3](workshops/foundry-models-e2e/07-multi-model-agent.md) | v3 scorecard · end-of-talk slide | 30 min |
 | [08 — Portal review](workshops/foundry-models-e2e/08-portal-review.md) | Evals · red team · version compare | 30 min |
+
+---
+
+## Workshop 2: One Endpoint, Smarter Spend — Model Router Deep-Dive
+
+> **Audience:** developers/architects who know LLMs but are new to Model Router · **Time:** ~2 hours · **Region:** Sweden Central
+
+The Model Router workshop proves the same "better, cheaper, faster" story with **zero routing code**. Instead of building a custom router, you deploy a single Model Router endpoint and let it intelligently route each prompt to the optimal model.
+
+| | v1 — Single Frontier | v5 — Router + Subset + Cache | Δ |
+|---|---|---|---|
+| **Quality** | 4.3 / 5.0 | 4.3 / 5.0 | ±0% |
+| **Cost / request** | $0.028 | $0.009 | **−68%** |
+| **Latency p50** | 3.2 s | 1.8 s | **−44%** |
+| **Routing code** | Custom function | None | **Zero** |
+
+```bash
+cd workshops/model-router-workshop
+# Then ask GitHub Copilot:
+# "Use the run-workshop skill on workshops/model-router-workshop"
+```
+
+| Lab | What you'll build | Time |
+|---|---|---|
+| [00 — Setup](workshops/model-router-workshop/00-setup.md) | Router + baseline deployed | 15 min |
+| [01 — Prompt set](workshops/model-router-workshop/01-prompt-set.md) | 50+ tagged representative prompts | 10 min |
+| [02 — Deploy router](workshops/model-router-workshop/02-deploy-router.md) | Modes, subset, response inspection | 15 min |
+| [03 — Comparison](workshops/model-router-workshop/03-baseline-comparison.md) | Baseline vs. router eval + model distribution | 20 min |
+| [04 — Custom evaluator](workshops/model-router-workshop/04-custom-evaluator.md) | Policy-Adherence eval-rubric (adaptive) | 25 min |
+| [05 — Optimize](workshops/model-router-workshop/05-optimize-modes.md) | Balanced / Cost / Quality mode comparison | 20 min |
+| [06 — Caching](workshops/model-router-workshop/06-prompt-caching.md) | Prompt caching + compound savings | 15 min |
+| [07 — Operate](workshops/model-router-workshop/07-operate.md) | Failover, continuous eval, portal | 15 min |
