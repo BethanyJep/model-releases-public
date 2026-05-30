@@ -86,7 +86,7 @@ TOOL_SCHEMAS = [
       "required": ["city", "checkin", "checkout"]}}},
   {"type": "function", "function": {
     "name": "check_policy",
-    "description": "Ask a question against Zava travel policy.",
+    "description": "Ask a question against WWI policy.",
     "parameters": {"type": "object", "properties": {
         "question": {"type": "string"}}, "required": ["question"]}}},
   {"type": "function", "function": {
@@ -144,7 +144,7 @@ from azure.ai.projects import AIProjectClient
 from s02_tools_mock import TOOL_SCHEMAS, DISPATCH
 from s02_config import PROJECT_ENDPOINT, DEPLOY_PLANNER
 
-INSTRUCTIONS = """You are Zava Travel. Use tools to plan and book travel.
+INSTRUCTIONS = """You are WWI. Use tools to plan and book travel.
 Always check policy before booking. Return a final JSON itinerary with keys:
 flight, hotel, policy_notes, total_estimated_cost_usd, booking_status."""
 
@@ -203,6 +203,10 @@ python s02_baseline_agent.py
 You should see a complete itinerary, with `latency_s` ≈ 11–13s and ~3K–5K total tokens.
 
 ## 2.4 — The scorecard module
+
+> **🎯 Two planning decisions land here, in this order:**
+> 1. **Set the targets.** `QUALITY_TARGET`, `COST_TARGET`, `LATENCY_TARGET` are the three numbers your stakeholder would sign off on. They turn into the ✅ markers on every scorecard from this step onward. Pick numbers you'd defend in a review — not aspirational placeholders.
+> 2. **Identify the evaluators** that will measure progress against each target. The headline `Quality` score uses two evaluators (schema + generic judge), and we add a third **custom Policy Adherence evaluator** ([`s05_policy_adherence_evaluator.py`](./code/s05_policy_adherence_evaluator.py)) that scores the dimension a generic judge can't see. All three are wired into the eval loop in Step 5 and run on every subsequent eval — so v1, v2, and v3 are measured against the same yardsticks. This is **evaluation-driven development**: pick what you'll measure *before* you start changing things.
 
 `code/s02_scorecard.py`:
 

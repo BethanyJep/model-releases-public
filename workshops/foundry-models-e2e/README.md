@@ -1,6 +1,8 @@
-# Right Model, Right Job — Zava Travel Concierge
+# Right Model, Right Job — WWI Concierge
 
 > Workshop slug: `foundry-models-e2e` · Workshop 0 (the Foundry-Models-E2E narrative)
+
+> **World Wide Importers (WWI)** is the fictitious enterprise used throughout this workshop — a mid-size global trading company whose employees travel constantly. The application we build for them is **WWI Concierge**, an internal AI travel assistant. Every persona, policy excerpt, evaluation row, and demo below is set in the WWI universe.
 
 This is the **hands-on companion** to [`foundry-models-e2e-plan.md`](../../.plans/foundry-models-e2e-plan.md) (the original PLAN — speaker script + trainer guide). Follow it end-to-end and you'll have every demo in the 45-minute session built, recorded-ready, and explainable.
 
@@ -45,9 +47,17 @@ Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tag
 
 > *Steps 0–2 are the prerequisite baseline (setup, v1 in the playground, v1 in code) — the lifecycle proper begins at Step 3.*
 
+> **🎯 Plan before you build: evaluation-driven *development*, scorecard-driven *optimization*.**
+> Before you write the agent, do two things in order:
+>
+> 1. **Define the optimization targets.** Pick a quality bar, a cost ceiling, and a latency budget — three concrete numbers your stakeholder would sign off on. These become `QUALITY_TARGET`, `COST_TARGET`, `LATENCY_TARGET` in [`code/s02_scorecard.py`](./code/s02_scorecard.py). No targets, no hill to climb.
+> 2. **Identify the evaluators that will measure progress against each target.** A schema/constraint evaluator covers structural correctness, an LLM-as-judge covers generic semantic correctness, and a **custom prompt-based evaluator** covers the dimension your workload actually pays the bill for (here: **Policy Adherence** — does the answer stay inside the four corners of [`travel-policy.md`](./sample-data/travel-policy.md)?). All three are wired from Step 5 onward and run on every subsequent eval — so v1, v2, v3 are all measured against the same yardsticks. See [`code/s05_policy_adherence_evaluator.py`](./code/s05_policy_adherence_evaluator.py) and the rubric in [`sample-data/README.md`](./sample-data/README.md#evaluating-policy-adherence).
+>
+> Then — and only then — pick models and start changing things. Every architectural decision in Steps 3–7 is justified by what these evaluators say *before* the change, not after. Step 8 closes the loop by promoting the hand-rolled custom evaluator into a managed **adaptive Eval Rubric** that updates itself from production traces, so the *next* hill climb doesn't depend on a human noticing a gap.
+
 ## Same scenario. Same quality. Dramatically lower cost.
 
-> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine Zava has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
+> *Numbers below are **representative, not measured** — they illustrate the shape of the win you'll reproduce at toy scale in the workshop. Imagine WWI has rolled the concierge to production: **~30,000 traveler interactions per day** across the customer base, three model roles (planner · policy · inline summarizer).*
 
 | | **Before — Unoptimized (v1)** | **After — Foundry-Optimized (v3)** |
 |---|---|---|
@@ -55,7 +65,7 @@ Foundry isn't a one-shot picker; it's a **continuous loop**. Each step below tag
 | **Routing** | None. Every request hits the frontier model. | Foundry **Model Router** picks per task type (`route_intent → planner / policy / inline`). |
 | **Caching** | None. Full processing every time. | System-prompt cache + semantic cache on policy Q&A (~35% hit rate). |
 | **Outputs** | Free text, parsed manually downstream. | **Schema-validated JSON** — no parsing overhead, fewer retries. |
-| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1`** on Zava refund / baggage / visa policy. |
+| **Customization** | Prompt-only. Policy answers drift on edge cases. | **Fine-tuned `gpt-4.1-mini`** on WWI refund / baggage / visa policy (knowledge-distilled from a `gpt-4.1` teacher). |
 | **Deploy** | Serverless for all traffic — no headroom plan. | Serverless baseline **+ PTU + automatic spillover + priority processing** on the planner. |
 | **Observability** | Print statements. | Built-in tracing, **online evaluations**, red team scans, version compare in the portal. |
 | **Cost / month** | <span style="color:#d33">**~$14,000**</span> | <span style="color:#0a0">**~$3,200  (−77%)**</span> |
@@ -79,7 +89,7 @@ The talk is structured as three short live demos (~4 / 4 / 5 minutes) that mirro
 
 | # | Demo beat | Workshop landing spot |
 |---|---|---|
-| 01 | **Set criteria** — define quality bar, latency budget, cost ceiling for this task | Step 2 — *scorecard* (`QUALITY_TARGET=0.92`, `COST_TARGET=$0.03`, `LATENCY_TARGET=8.0s`) referenced by every subsequent step |
+| 01 | **Set criteria + identify evaluators** — define quality bar, latency budget, cost ceiling; pick the evaluators that will measure each one (including a custom evaluator for the dimension generic judges can't see) | Step 2 — *scorecard targets* (`QUALITY_TARGET=0.92`, `COST_TARGET=$0.03`, `LATENCY_TARGET=8.0s`) + Step 5 — *three evaluators registered together*: schema · generic LLM-judge · custom **Policy Adherence** rubric ([`s05_policy_adherence_evaluator.py`](./code/s05_policy_adherence_evaluator.py)) |
 | 02 | **Load prompts** — a representative set of real production inputs | Step 4 — *synthetic eval set* (`eval-seed.jsonl`) + Step 5 — *5.3 The driver* loads it |
 | 03 | **Run comparison** — execute the prompt set against Model A and Model B in parallel | Step 5 — *5.3* (v1 baseline) and *5.4 Build v2* (router + per-task models) over the same eval set |
 | 04 | **Review results** — side-by-side outputs, scores, latency, cost — then decide | Step 5 — *5.5 Check it in the portal* (Foundry evaluations UI, side-by-side run compare) |
@@ -187,8 +197,11 @@ workshops/foundry-models-e2e/
 ├── 07-multi-model-agent.md
 ├── 08-portal-review.md
 ├── 99-recap.md
-├── sample-data/
-│   ├── travel-policy.md           ← the 2-page sample policy
+├── sample-data/                   ← full asset map in [`sample-data/README.md`](./sample-data/README.md)
+│   ├── README.md                  ← workload-intent map + per-file purpose + LLM-as-judge rubric
+│   ├── travel-policy.md           ← the 2-page sample policy (text source-of-truth)
+│   ├── wwi-travel-policy.html     ← glossy printable policy handbook → rendered to `assets/00-policy.png`
+│   ├── carmen-parking-receipt.html ← branded receipt mock → rendered to `assets/00-receipt.png` (vision input)
 │   ├── eval-seed.jsonl            ← 20 curated rows (ground truth)
 │   ├── eval-full.jsonl            ← *(generated by Step 4)* ~200-row eval set
 │   ├── eval-policy-only.jsonl     ← policy slice for Step 6 sanity checks
@@ -210,7 +223,7 @@ workshops/foundry-models-e2e/
     ├── s06_finetune_policy.py    ← fine-tune gpt-4.1-mini on policy QA
     ├── s06_expand_ft_data.py     ← distillation pipeline: gpt-4.1 teacher generates training labels
     ├── s06_policy_only_eval.py   ← isolated base-vs-FT scorecard (deterministic, no LLM judge)
-    ├── s99_replay_demo.sh        ← interactive demo-replay driver (see RERUN.md)
+    ├── s99_replay_demo.sh        ← interactive demo-replay driver (see DEMO.md)
     └── generated/                 ← all eval_results_*.json + traces (gitignored)
 ```
 
@@ -220,7 +233,40 @@ Start with **[Step 0 — Prereqs & project](./00-setup.md)**. When you finish St
 
 ## Re-running for a clean recorded demo
 
-Once you've completed the workshop once (resources provisioned, FT model deployed, datasets generated), you can replay the **code-only path** in ~20 minutes to regenerate clean scorecards for a recording — no setup, no fine-tuning, no portal clicks.
+Both replay paths below ultimately read **real eval JSON from real Azure
+runs** — they differ only in *which* run, and how reproducible it is:
+
+- **`session/`** — a frozen cache of the **original BRK230 session run**,
+  hand-promoted into the agent tree. The BRK230 agent's *session*
+  mode reads from here so rehearsals and recordings stay bit-for-bit
+  reproducible forever. **Do not modify these files** — that's the
+  reference build you'll always be able to fall back to.
+- **`generated/`** — the run *you* want the agent to walk through. It
+  starts out as a copy of the BRK230 run too, but **you're encouraged to
+  replace it with your own numbers** any time you re-run the workshop.
+  Nothing automatic touches this folder — you copy your eval JSONs in
+  when *you* decide they're a good run, and they stay there until you
+  choose to overwrite them.
+
+### Option A — BRK230 demo replay (recommended for recordings)
+
+A custom Copilot agent (**`@BRK230 Demo Replay`**) replays the entire
+5-demo BRK230 flow end-to-end in chat, off whichever set of eval JSONs
+you point it at — no Azure calls, no waiting on fine-tunes during the
+recording itself. This is what we use for rehearsals and the recorded
+session.
+
+See **[DEMO.md](./DEMO.md)** for the full guide: how to invoke the agent,
+the two modes (session vs live), how `narrative.json` drives every
+scorecard, and how to refresh the live numbers from a fresh workshop
+run.
+
+### Option B — Re-run the code path against real Azure
+
+Once you've completed the workshop once (resources provisioned, FT model
+deployed, datasets generated), you can replay the **code-only path** in
+~20 minutes against your live deployments to regenerate clean scorecards
+— no setup, no fine-tuning, no portal clicks.
 
 ```bash
 cd workshops/foundry-models-e2e/code
@@ -228,11 +274,136 @@ source ../.venv/bin/activate
 ./s99_replay_demo.sh           # interactive: ENTER to run each stage, s=skip, q=quit
 ```
 
-Full details, file provenance, parallel-terminal recipes, and troubleshooting are in **[RERUN.md](./RERUN.md)**.
+This writes fresh `eval_results_*.json` files into
+[code/generated/](./code/) (gitignored). To make those numbers visible
+to the BRK230 demo agent, **manually copy them** over the matching files
+in `.github/agents/brk230-demo/generated/`:
+
+```bash
+cp code/generated/eval_results_v1-curated.json \
+   ../../.github/agents/brk230-demo/generated/
+# ...repeat for v1-demo, v2-demo, v3-demo
+```
+
+The next time the agent loads in *live* mode it'll notice the new files,
+rebuild `narrative.json`, and start citing your numbers instead. **The
+`session/` folder is never touched** — it remains the original BRK230
+cache for reproducible replays.
+
+> **Set targets that match *your* SLA.** The four `targets` in
+> `generated/narrative.json` (quality, cost, latency, policy) drive every
+> ✅ / 🚨 in the scorecards. Defaults are tuned for the BRK230 demo
+> (Quality ≥ 0.80 · Cost ≤ $0.008 · Latency ≤ 15.0s · Policy ≥ 0.80) so
+> v1 lights up red across the board and v3 clears all four. Edit them in
+> `generated/narrative.json` to match the SLA your stakeholders would
+> sign off on — the scorecards re-render against your numbers on the
+> next agent load. **`session/narrative.json` is locked** and should not
+> be edited; it preserves the original BRK230 session targets so the
+> recorded replay never drifts.
+
+> **Regenerate the playbook from your run.** [PLAYBOOK.md](./PLAYBOOK.md)'s
+> meta-table and headline numbers are derived from the same
+> `generated/narrative.json` the agent reads. After you copy your eval
+> JSONs into `generated/`, run
+> [`code/s99_rebuild_playbook.sh`](./code/s99_rebuild_playbook.sh) and
+> splice its output into PLAYBOOK — so the playbook always tells *your*
+> story, not ours.
 
 ### Conventions used by the replay tooling
 
 - **`code/generated/`** — every eval result, trace dump, and intermediate artifact lands here. The folder is `.gitignore`d so nothing committed gets dirty. Wipe with `rm -rf code/generated` for a full reset.
 - **Timestamped result files** — the replay script names outputs `eval_results_<label>-<UTC-timestamp>.json` so prior runs are never clobbered and runs can be diffed.
 - **`s06_expand_ft_data.py` is now idempotent.** Earlier versions read and wrote the same `policy-ft-{train,val}.jsonl` paths, which silently *doubled* the dataset on every re-run. The fixed version reads optional seeds from `policy-ft-seeds-{train,val}.jsonl` and always overwrites outputs fresh. Safe to re-run any number of times. See header of [`code/s06_expand_ft_data.py`](./code/s06_expand_ft_data.py).
+
+---
+
+## Best Practices
+
+Hard-won lessons captured live as we ran this workshop on stage. Each one is a small lever that pays back many times over a recorded demo, a sales call, or an attendee's first hands-on. Apply these before you hit "go".
+
+### Right-size the evaluation dataset for the venue
+
+The same agent deserves different eval datasets at different moments. Don't run the 173-row `eval-full.jsonl` during a stage demo — it's noisy, slow, and the audience can't read the JSON anyway. Match dataset size to purpose:
+
+| File | Rows | Purpose | Wall-clock (concurrency=10) | TPM needed |
+|---|---|---|---|---|
+| `eval-seed.jsonl` | 20 | Inner-loop smoke test while you iterate on a prompt | <30 s | planner ≤ 50K, others ≤ 10K |
+| `eval-demo.jsonl` | **50** ⭐ | Stage default for v1 vs v2 vs v3 scorecard comparisons | ~60–90 s | planner ≤ 125K, others ≤ 30K |
+| `eval-full.jsonl` | 173 | Offline / CI / overnight thoroughness | 3–5 min | planner ≥ 300K, others ≥ 100K |
+
+**Why 50 is the sweet spot for a demo:**
+- Detects a ~15% quality delta at 95% CI (enough to separate v1 / v2 / v3 cleanly)
+- 5–8 examples per intent bucket → failure modes are *legible* when you open the JSON on stage
+- Completes in under 90 s so the audience doesn't tab away
+- Rerun variance is low enough that two consecutive runs won't swap your winners
+
+`eval-demo.jsonl` is built deterministically (seed=42) from `eval-full.jsonl` — 20 seed rows verbatim plus 10/10/10 across plan_trip / policy_question / receipt_expense.
+
+### Provision deployment TPM for parallel evaluation
+
+The `azure-ai-evaluation` SDK runs ~10 evaluator workers concurrently, and the v2/v3 agents fan each row to up to four deployments with planner loops of 2–6 calls. If any deployment is provisioned at the default 10K TPM, you will see **every row return identical 30 s latency, $0.000 cost, and ~0.25 quality** — the OpenAI SDK silently absorbs the 429s with backoff and returns an empty `output_text`. That is a poisoned signal, not a model verdict.
+
+Minimums for `eval-demo.jsonl` (50 rows, concurrency 10):
+
+| Deployment | Minimum | Recommended for live demo |
+|---|---|---|
+| `planner-gpt41` | 125K | 200K (covers parallel v1+v2 runs + judge phase) |
+| `router-nano` | 30K | 50K |
+| `mini-vision` | 30K | 50K |
+| `policy-mini-base` | 30K | 50K |
+| `auto-router` *(optional, Step 8 stretch)* | 50K | 100K (also covers 173-row offline run) |
+
+`s00_setup.sh` provisions everything at 10K by default — bump in the portal under **Build → Models → Deployments → Edit → Tokens per minute rate limit** before Step 5.
+
+**Smoke-test for throttling** after any eval run:
+```bash
+jq -r '.rows[] | ."outputs.latency_s"' generated/eval_results_<label>.json \
+  | sort -n | awk 'BEGIN{c=0} {a[c++]=$1; s+=$1}
+                   END{print "p50="a[int(c*0.5)], "p90="a[int(c*0.9)], "max="a[c-1]}'
+```
+Healthy run: `p50 ≠ p90 ≠ max`. Throttle artifact: pathologically flat (e.g. `p50=30 p90=30 max=30`).
+
+### Trust the local JSON as your inner-loop signal
+
+Every `s05_run_eval.py` run prints a `📊 Portal:` URL. That URL is a stakeholder artifact — it appears in the portal after a delay and is the right view for **Step 8**'s version-compare narrative. It is **not** your dev inner loop.
+
+The dev inner loop is the 40 KB file written next to the script: `code/generated/eval_results_<label>.json`. Three `jq` recipes get you everything you need without leaving VS Code:
+
+```bash
+# Headline
+jq .metrics generated/eval_results_v1-curated.json
+
+# What broke (schema failures)
+jq -r '.rows[] | select(."outputs.schema.schema_score" < 1) | "\(."inputs.id") \(."inputs.intent")"' \
+  generated/eval_results_v1-curated.json
+
+# Why (judge reasoning on low scorers)
+jq -r '.rows[] | select(."outputs.judge.judge_score" <= 0.4) | ."outputs.judge.reason"' \
+  generated/eval_results_v1-curated.json
+```
+
+In our live run, the third recipe surfaced "every `policy_question` row failed for the same reason" in under five seconds — the exact motivation for Step 6's fine-tune, derived from local artifacts, no portal round-trip needed.
+
+### Name deployments by job, not by model
+
+`planner-gpt41`, `router-nano`, `mini-vision`, `policy-mini-base` — not `gpt-4.1-deployment-3`. When a new model lands in the catalog, swapping it in becomes a one-line config change (`DEPLOY_PLANNER = "planner-gpt45"`) and your code, evals, and traces all keep working. This is the operational backbone of Challenge #5 ("the landscape keeps changing") and the reason Step 6's fine-tune swap is `USE_FT_POLICY = True`, not a refactor.
+
+### Pre-warm the Operate dashboards with realistic load
+
+The portal monitoring tabs are uninteresting with no traffic. Set up a hosted **Prompt Agent** once and then drive it with the load tester an hour before the Step 8 walk-through:
+
+```bash
+# one-time: create the concierge-loadtest Prompt Agent in the project
+../.venv/bin/python code/s08_agent_setup.py \
+  --name concierge-loadtest --model planner-gpt41 --temperature 0.2
+
+# 2 h continuous load against the hosted agent (attach App Insights first)
+nohup ../.venv/bin/python -u code/s08_loadtest_agent.py \
+  --duration 2h --base-rpm 5 --spikes 4 --lulls 2 --workers 4 \
+  --label monitor-demo \
+  > code/generated/loadtest_agent_monitor-demo.out 2>&1 &
+```
+
+The loadtester invokes the hosted agent through the Responses API (`agent_reference`) and wires `AIProjectInstrumentor` + Azure Monitor exporter, stamping every span with WWI custom dimensions (`wwi.prompt.class`, `wwi.prompt.kind`, `wwi.expected.is_policy`, `wwi.expected.is_adversarial`, `wwi.run.*`). By the time you're in [`08-portal-review.md`](./08-portal-review.md), **Agents → concierge-loadtest → Tracing** (and the attached App Insights Logs) has thousands of real spans to filter on — content-filter blocks, latency outliers, intent-distribution shifts — that motivate the closing "hand-rolled → managed Eval Rubric" narrative.
+
 

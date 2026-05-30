@@ -15,14 +15,14 @@ under `<skill>/skills/<sub>/SKILL.md` with the same shape.
 
 ## Current skills
 
-The four skills come in two **author → learner pairs**:
+The skills come in three **author → driver pairs**:
 
-| Pair | Author skill (scaffolds content) | Learner skill (walks through content) |
+| Pair | Author skill (scaffolds content) | Driver skill (walks / drives content) |
 |---|---|---|
 | Models | [`add-model`](./add-model/SKILL.md) | [`explore-model`](./explore-model/SKILL.md) |
 | Workshops | [`add-workshop`](./add-workshop/SKILL.md) | [`run-workshop`](./run-workshop/SKILL.md) |
 
-Both learner skills share the same five subskills:
+The model + workshop driver skills share the same five subskills:
 `setup`, `complete-step`, `check-status`, `troubleshoot`, `learn-more`.
 
 | Skill | Purpose | When to invoke |

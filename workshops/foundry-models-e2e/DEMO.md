@@ -1,407 +1,279 @@
-# Speaker Demo Guide — Right Model, Right Job
+# BRK230 — "Right Model, Right Job" demo replay
 
-<!--
-PROMPT TO RECREATE:
-Look at the speaker demos flows description - I need to record three 4-5 minute demos using this worksop that will fit that spec. Create a DEMO.md file under workshops/foundry- subfolder and write up a transcript I can use for doing this demo. Assume that I can do some setup ahead of time and can have the Foundry project open in one browser tab and my Codespaces open in another (with the Copilot run visible). Write up guidance so anyone can reproduce this - and write up the speaker transcript so it fits the time and lands the message
--->
+This workshop ships a custom Copilot agent that replays the BRK230 demo
+for [foundry-models-e2e](README.md) end-to-end in chat. It's the agent
+we use for **rehearsals, recordings, and live breakouts** when we don't
+want to wait on a real Azure run during the talk.
 
-
-> Three live demos, ~4 / 4 / 5 minutes each.  
-> Source material: [README.md](./README.md) · Workshop steps 2–8.  
-> Scenario: **Zava Travel Concierge** — Carmen needs to book a business trip to Berlin.
-
----
-
-## Table of Contents
-
-- [Setup checklist (do this before you go on stage)](#setup-checklist)
-- [Browser layout](#browser-layout)
-- [Demo 1 — Select the right model (~4 min)](#demo-1--select-the-right-model-4-min)
-- [Demo 2 — Validate with evidence (~4 min)](#demo-2--validate-with-evidence-4-min)
-- [Demo 3 — Optimize cost and performance (~5 min)](#demo-3--optimize-cost-and-performance-5-min)
-- [Recovery notes](#recovery-notes)
+The agent definition lives at
+[brk230-demo.agent.md](../../.github/agents/brk230-demo.agent.md); all
+of the data it reads sits under
+[brk230-demo/](../../.github/agents/brk230-demo/).
 
 ---
 
-## Setup checklist
+## TL;DR
 
-Complete all of the following **before** recording or presenting. Everything here maps to workshop Steps 0–7 — run the full workshop end-to-end at least once, then use these steps to get back to the right state.
+1. Open Copilot Chat → `@BRK230 Demo Replay`.
+2. Type **`run the session demo`** (rehearsals/recording) **or**
+   **`run the live demo`** (real numbers from the last workshop run).
+3. The agent prints a confirmation line (`Loaded SESSION manifest · …`),
+   then waits.
+4. Paste any of the 5 BRK230 trigger phrases (in order):
+   1. `run the baseline evaluation with my single frontier model`
+   2. `help me decompose this into a multi-model architecture`
+   3. `help me add a custom evaluator to track policy adherence`
+   4. `help me optimize the policy model for improving adherence`
+   5. `summarize my journey and give me a playbook for future`
 
-### Environment
+Each demo opens with a `Refer to files:` block (links you open in the left
+editor pane), waits for you to say `go`, then mimics the run on the right
+and finishes with a boxed scorecard plus a one-line takeaway.
 
-- [ ] Codespace (or local dev container) open, repo cloned to `workshops/foundry-models-e2e`.
-- [ ] Python venv active: `source .venv/bin/activate`
-- [ ] `.env` present and loaded — contains `FOUNDRY_PROJECT_ENDPOINT`.
-- [ ] `az login` current; `az account show` shows the right subscription.
+---
 
-### Foundry project
+## Two modes, identical script
 
-- [ ] Project `zava-travel-demo` exists in **Sweden Central**.
-- [ ] All five deployments show `Succeeded` in the portal:
-  - `planner-gpt41` (gpt-4.1)
-  - `router-nano` (gpt-4.1-nano)
-  - `mini-vision` (gpt-4.1-mini)
-  - `policy-mini-base` (gpt-4.1-mini)
-  - `policy-mini-ft` (fine-tuned gpt-4.1-mini, from Step 6)
+| Mode | Trigger | Data dir | Use it for |
+|---|---|---|---|
+| **SESSION** | `run the session demo` | [session/](../../.github/agents/brk230-demo/session/) | Rehearsals, recordings, anything where you need the numbers to never drift — frozen record of the original BRK230 session run |
+| **LIVE** | `run the live demo` | [generated/](../../.github/agents/brk230-demo/generated/) | Showing the audience real eval JSON from the most recent workshop pass |
 
-### Eval runs pre-staged (needed for Demo 2 and 3 portal views)
+The flow, beats, and trigger phrases are **identical** between modes — only
+the underlying numbers and the cited JSON path differ. Both modes are
+fully offline; nothing calls Azure at demo time.
 
-Run these once before the session and keep the terminal output handy:
+> **Note on the initial state.** In this first commit, `session/` and
+> `generated/` contain the **same** eval JSONs and `narrative.json` —
+> both seeded from the inaugural BRK230 workshop run. That's intentional:
+>
+> - **`session/`** is the **frozen BRK230 reference build** — real eval
+>   data from the original BRK230 session run, captured at a fixed point
+>   in time. It is never auto-updated, and you should never modify it by
+>   hand either. It exists so a rehearsal or recording always has the
+>   original numbers to fall back on, no matter what you do elsewhere.
+> - **`generated/`** is **yours to overwrite**. Nothing in the workshop
+>   automatically copies fresh runs into it — it only changes when *you*
+>   manually drop new `eval_results_*.json` files in. After that, the
+>   agent's live mode walks through your numbers; until then, both modes
+>   tell the same BRK230 story.
+
+---
+
+## How the agent stays on rails
+
+The agent definition (frontmatter + system prompt) is the contract.
+Important rules baked in:
+
+- **Mimic, don't execute.** Eval/fine-tune/deploy commands are shown in
+  fenced bash blocks with realistic-looking output, not actually run.
+- **Numbers come from `narrative.json` only.** If a value isn't in the
+  manifest, the agent says so instead of inventing it.
+- **Each demo opens with a file list and halts.** You drive the editor
+  pane while the agent waits — say `go` to continue.
+- **Scorecards are boxed ASCII** with target thresholds from
+  `manifest.targets` and ▲/▼ arrows colored by `target_status`.
+- **No raw progress logs, no jq dumps > 10 lines, no full JSON paste.**
+  Same discipline as the workshop instructor-mode rules.
+
+If the agent ever drifts (invents numbers, skips the `Refer to files:`
+block, runs commands for real), the fix is almost always in the
+`.agent.md` system prompt — not in the data.
+
+### Which model runs the agent?
+
+The agent's frontmatter pins a **default** model list:
+
+```yaml
+model:
+  - Claude Sonnet 4.6 (copilot)   # primary
+  - Claude Opus 4.7 (copilot)     # backup
+```
+
+Those are the models we rehearsed and recorded BRK230 against — they
+follow the "mimic, don't execute" rules cleanly and render the boxed
+scorecards reliably. **You don't have to use them.** The model picker
+in the Copilot Chat input row overrides the agent's default for that
+turn, so you can flip to GPT, Gemini, or any other available model and
+the same `.agent.md` system prompt + `narrative.json` data will drive
+the run. If you see drift (invented numbers, skipped halts, running
+commands for real) on a different model, fall back to Sonnet 4.6 — the
+prompt is tuned for it.
+
+---
+
+## `narrative.json` — the manifest that drives every demo
+
+`narrative.json` is the **single source of truth** for everything numeric
+the agent says. It exists in both `session/` and `generated/` and has
+the same shape:
+
+```jsonc
+{
+  "version": 1,
+  "data_dir": "...absolute path...",
+  "content_hash": "sha256 over the eval JSONs",   // agent prints first 4 chars
+  "targets":     { "quality": 0.92, "cost": 0.030, "latency": 8.0, "policy": 0.80 },
+  "price_table": { "planner-gpt41": {"in": 0.005, "out": 0.015}, ... },
+  "runs": {
+    "v1-curated": { ... },   // DEMO 1, 20-row baseline
+    "v1-demo":    { ... },   // DEMO 2, 50-row baseline
+    "v2-demo":    { ... },   // DEMO 2/3, multi-model
+    "v3-demo":    { ... }    // DEMO 4, after fine-tune
+  }
+}
+```
+
+Each `runs.<label>` entry carries:
+
+| Field | Meaning | Where it shows in the demo |
+|---|---|---|
+| `source_file` | The `eval_results_*.json` it was computed from | The clickable link printed before each scorecard |
+| `n_rows` | Row count in the eval set | Inline mention ("50-row demo set") |
+| `judge_score` / `quality` | LLM-judge mean — **headline quality metric** | 🎯 row in the scorecard |
+| `schema_score` | Schema-validity mean | Background only; not headlined |
+| `latency_s` | Mean per-row latency | ⚡ row |
+| `cost_usd` | Mean per-row USD cost (computed from `usage_json` × `price_table`) | 💸 row |
+| `policy_score` | Custom policy-adherence evaluator mean (null on v1-curated) | 📜 row, DEMOs 3–5 |
+| `policy_applicable_frac` | Fraction of rows the policy rubric scored | "applicable to ~⅓ of rows" callout in DEMO 3 |
+| `studio_url` | Foundry portal URL for that run | Optional reference |
+| `delta_vs_v1` | `{abs, pct}` per metric vs the **`v1-demo`** 50-row baseline | Δ column with ▲/▼ arrows |
+| `target_status` | `green` / `amber` / `red` / `na` per metric | Drives ✅/🚨 emoji and the "lead-in" line of each takeaway |
+
+### Where the scorecard insights come from
+
+Every scorecard the agent renders maps directly back to this manifest:
+
+- **Headline cells** (🎯 quality, 💸 cost, ⚡ latency, 📜 policy) =
+  `runs.<label>.{quality, cost_usd, latency_s, policy_score}`.
+- **Target bar / threshold line** = `manifest.targets`.
+- **Pass / fail glyph** = `runs.<label>.target_status.<metric>`
+  (`green` → ✅, `amber` → ⚠️, `red` → 🚨, `na` → blank).
+- **Δ column on v2/v3 scorecards** = `runs.<label>.delta_vs_v1.<metric>`,
+  with the **arrow direction inverted by metric polarity**:
+  - quality / policy: `abs > 0` → ▲ green, `abs < 0` → ▼ red
+  - cost / latency:   `abs < 0` → ▼ green, `abs > 0` → ▲ red
+- **Takeaway lead-in** ("cheaper + faster, but worse on the dimension WWI
+  pays the bill for…") is shaped by which `target_status` flipped between
+  runs — not by hand-written prose.
+
+If you want a different threshold or a different bucket, change
+`TARGETS` in [analyze_eval_run.py](../../.github/agents/brk230-demo/tools/analyze_eval_run.py)
+and re-run the analyzer (see below).
+
+---
+
+## Running a fresh **live** demo (refresh `generated/`)
+
+Nothing automatic touches `.github/agents/brk230-demo/generated/` — you
+decide when to refresh it, by manually copying the eval JSONs from a
+workshop run you're happy with. Once the new files are in place, the
+agent runs the analyzer for you on first load (it notices any
+`eval_results_*.json` newer than `narrative.json`). To do it manually:
 
 ```bash
-cd workshops/foundry-models-e2e/code
+# 1. Drop the four refreshed eval JSONs into:
+#    .github/agents/brk230-demo/generated/
+#      eval_results_v1-curated.json   (DEMO 1, 20 rows)
+#      eval_results_v1-demo.json      (DEMO 2, 50 rows baseline)
+#      eval_results_v2-demo.json      (DEMO 2/3, multi-model)
+#      eval_results_v3-demo.json      (DEMO 4, after FT)
 
-# v1 baseline — single model, no routing
-python s05_run_eval.py --agent s02_baseline_agent \
-    --eval ../sample-data/eval-seed.jsonl --label "v1-baseline"
+# 2. Re-build the manifest (run from repo root):
+python3 .github/agents/brk230-demo/tools/analyze_eval_run.py \
+    .github/agents/brk230-demo/generated
 
-# v2 — router + per-task models, no fine-tune
-python s05_run_eval.py --agent s05_multi_model_agent \
-    --eval ../sample-data/eval-full.jsonl --label "v2-batch"
+# 3. Sanity-check the summary it prints:
+#       label         n   quality      cost  latency   policy
+#       v1-curated   20    0.590  $0.0105   13.20s     na
+#       v1-demo      50    0.644  $0.0104   29.14s    0.362
+#       v2-demo      50    ...                              ...
+#       v3-demo      50    ...                              ...
 
-# v3 — full assembly with fine-tuned policy model
-# (set USE_FT_POLICY = True in s05_multi_model_agent.py first)
-python s05_run_eval.py --agent s05_multi_model_agent \
-    --eval ../sample-data/eval-full.jsonl --label "v3-final"
+# 4. Commit narrative.json + the 4 eval JSONs together so the
+#    content_hash and the data they describe never get out of sync.
 ```
 
-Expected terminal output to have visible during Demo 2:
-```
-=== v1-baseline scorecard ===
-Quality   ██░░░░░░░░  0.61
-Cost      ██░░░░░░░░  $0.108/task
-Latency   ██████░░░░  12.3 s
+The next time the agent loads, it'll print
+`Loaded LIVE manifest · 4 runs · hash <new>` with the fresh numbers, and
+every scorecard will reflect them automatically — no agent prompt edits
+needed.
 
-=== v2-batch scorecard ===
-Quality   ████░░░░░░  0.78
-Cost      ░░░░░░░░░░  $0.063/task
-Latency   █████░░░░░  9.4 s
-
-=== v3-final scorecard ===
-Quality   █████████░  0.94  ✅
-Cost      ██░░░░░░░░  $0.028/task  ✅
-Latency   ███░░░░░░░  7.6 s  ✅
-```
-
-### Portal tabs pre-loaded
-
-Have these pages open and **logged in** before you start:
-
-| Tab | URL path | Used in |
-|---|---|---|
-| **Tab 1** | Foundry Portal → project `zava-travel-demo` → **Models + endpoints** | Demo 1 |
-| **Tab 2** | Foundry Portal → same project → **Evaluation** | Demo 2 |
-| **Tab 3** | Foundry Portal → same project → **Evaluation → Compare** (v1 vs v3) | Demo 3 |
-| **Tab 4** | Codespace — terminal open in `workshops/foundry-models-e2e/code/` | All demos |
-
-> **Tip:** Use a browser profile with Foundry already authenticated to avoid login prompts mid-demo.
-
-### Files to have open in the editor (Tab 4)
-
-Open these in VS Code tabs before recording:
-
-- `code/s02_config.py` — shows deployment names by job
-- `code/s03_router.py` — shows the router
-- `code/s05_multi_model_agent.py` — shows the full agent
-- `code/s05_run_eval.py` — the eval driver
+> **Sensitive-data check:** the eval JSONs contain `studio_url`s with
+> subscription/tenant IDs. Either scrub them before commit or accept
+> that they ship with the repo (`.reference-copy/` already shows them).
 
 ---
 
-## Browser layout
+## Editing the **session** narrative
 
-```
-┌─────────────────────────────────┐  ┌──────────────────────────────────┐
-│  BROWSER (Foundry Portal)       │  │  CODESPACE (VS Code / terminal)  │
-│                                 │  │                                  │
-│  Tab 1: Models + endpoints      │  │  Editor: s02_config.py           │
-│  Tab 2: Evaluation              │  │  Editor: s05_multi_model_agent   │
-│  Tab 3: Evaluation compare      │  │  Terminal: code/ directory       │
-│                                 │  │  Copilot Chat panel visible      │
-└─────────────────────────────────┘  └──────────────────────────────────┘
-```
+`session/narrative.json` is the **frozen record of the original BRK230
+session run** — the agent will *not* re-analyze it, even if you drop new
+JSONs alongside. That's deliberate: rehearsals and recordings need
+numbers that never drift.
 
-Keep both windows visible side by side if your recording resolution allows (1920×1080 or wider). Otherwise, switch cleanly between the two at the cue points marked **[SWITCH →]** in the transcripts below.
+If you ever need to tweak the recorded story (e.g. dial up the v3
+policy jump for a re-recording):
 
----
-
-## Demo 1 — Select the right model (~4 min)
-
-**Message to land:** Decompose the workload first. Four of five jobs in this app do not need a frontier model — the catalog makes the right choice obvious once you ask the right question.
-
-**Beats:** Catalog → Filters → Model cards → Shortlist  
-**Workshop reference:** [Step 3 — Model selection](./03-model-selection.md)
-
-### What to have visible at the start
-
-- **Tab 1 (Portal)** showing `Models + endpoints` with the five deployments already in `Succeeded` state.
-- **Tab 4 (Codespace)** with `s02_config.py` open and Copilot Chat visible.
+1. Edit `session/narrative.json` directly.
+2. Keep the shape identical to what the analyzer produces (same keys,
+   same `delta_vs_v1`, same `target_status`) — the agent reads them by
+   name.
+3. If you also want the linked `eval_results_*.json` files in
+   `session/` to match (the audience may open them), edit those too.
+4. Bump `content_hash` to anything new — it's only used as a cache-buster
+   indicator the agent prints; it doesn't have to actually hash.
 
 ---
 
-### Transcript
-
-> *(Start on Tab 1 — Models + endpoints page)*
-
-"Let me show you where this all starts — and it's not in code.
-
-Zava has an AI travel concierge that books trips for employees. The first version was simple: one prompt, one model — `gpt-4.1` for everything. Sounds fine. Costs about eleven cents per completed trip.
-
-The question we're going to answer is: **do you actually need a frontier model for every part of this?**
-
-Here in the Foundry portal I can see the model catalog. Over eleven thousand models, across providers, modalities, and tiers. This is useful but also overwhelming, so let's ask a better question.
-
-**[SWITCH → Tab 4: Copilot Chat panel]**
-
-I'm going to use the Foundry skill right here in Copilot. I'm going to describe the five actual jobs Carmen's trip requires — routing the request, reading a receipt image, answering a policy question, planning the multi-step itinerary, and translating a hotel email — and ask it to recommend a model and deployment for each one.
-
-*(Type or paste the prompt into Copilot Chat)*
+## File map
 
 ```
-I need Azure Direct models from Sweden Central for these tasks:
-  1. Fast intent classification (≤200 tokens in, ≤30 out, p50 ≤300ms)
-  2. Vision: extract merchant, amount, date from a receipt image
-  3. Domain QA grounded in a 2-page policy doc
-  4. Multi-step planner with tool calls (≤4K tokens, p50 ≤6s)
-  5. EN↔DE translation, short emails
-
-Recommend a model from gpt-4.1, gpt-4.1-mini, gpt-4.1-nano for each,
-with one-sentence justification and deployment names.
+.github/agents/
+├── brk230-demo.agent.md                  ← agent definition (system prompt)
+└── brk230-demo/
+    ├── session/                          ← frozen BRK230 session run (real data, fixed in time)
+    │   ├── narrative.json                  manifest (frozen — do not modify)
+    │   └── eval_results_v{1-curated,1-demo,2-demo,3-demo}.json
+    ├── generated/                        ← real run, auto-analyzed
+    │   ├── narrative.json                  manifest (regenerated)
+    │   └── eval_results_v{1-curated,1-demo,2-demo,3-demo}.json
+    └── tools/
+        └── analyze_eval_run.py           ← rebuilds narrative.json from JSONs
 ```
 
-*(Let the response stream in — don't rush it)*
-
-Look at what comes back. Routing: **nano** — sub-300ms, plenty capable for a three-class classifier. Receipt and translation: **mini** — vision support, no need for the frontier. Policy QA: **mini** — we'll fine-tune it on Zava's specific policy in Demo 3. Planning with tools: **gpt-4.1** — that's where frontier-level reasoning actually earns its keep.
-
-Four of five jobs routed away from the most expensive model. The skill also generated deployment names like `router-nano`, `mini-vision`, `planner-gpt41`. Notice what those names *don't* contain — model version numbers. They describe the **job**, not the model underneath.
-
-**[SWITCH → Tab 1: Models + endpoints]**
-
-And those are exactly the deployments you see here, already in Succeeded state. I deployed these using the same Foundry skill — one prompt, one deployment. No portal clicks required, though you can always verify here.
-
-This single decision — decomposing the workload and routing each job to the smallest model that meets its bar — drops the cost from eleven cents to about six cents before we've written a single line of agent code. And it's reversible: if a better nano drops next month, you swap the model behind the name and nothing else changes."
+For the workshop content the demo replays, see
+[README.md](README.md) and [PLAYBOOK.md](PLAYBOOK.md).
 
 ---
 
-### Cue sheet (timing guide)
+## Appendix — what's in `.github/agents/brk230-demo/`
+
+| File | What it is |
+|---|---|
+| [brk230-demo.agent.md](../../.github/agents/brk230-demo.agent.md) | The agent definition: frontmatter + system prompt that drives the entire 5-demo replay |
+| [analyze_eval_run.py](../../.github/agents/brk230-demo/tools/analyze_eval_run.py) | Reads the four `eval_results_*.json` files in a data dir and (re)builds `narrative.json` with quality / cost / latency / policy + Δ + target flags |
+| [session/narrative.json](../../.github/agents/brk230-demo/session/narrative.json) | Frozen manifest used in **SESSION** mode — record of the original BRK230 session run, fixed in time |
+| [session/eval_results_v1-curated.json](../../.github/agents/brk230-demo/session/eval_results_v1-curated.json) | 20-row baseline eval result from the BRK230 session (DEMO 1 — single frontier model) |
+| [session/eval_results_v1-demo.json](../../.github/agents/brk230-demo/session/eval_results_v1-demo.json) | 50-row v1 baseline eval result from the BRK230 session (DEMO 2 — comparison anchor) |
+| [session/eval_results_v2-demo.json](../../.github/agents/brk230-demo/session/eval_results_v2-demo.json) | 50-row v2 multi-model eval result from the BRK230 session (DEMO 2/3) |
+| [session/eval_results_v3-demo.json](../../.github/agents/brk230-demo/session/eval_results_v3-demo.json) | 50-row v3 post-fine-tune eval result from the BRK230 session (DEMO 4) |
+| [generated/narrative.json](../../.github/agents/brk230-demo/generated/narrative.json) | Auto-generated manifest used in **LIVE** mode — refreshed by `analyze_eval_run.py` whenever the eval JSONs change |
+| [generated/eval_results_v1-curated.json](../../.github/agents/brk230-demo/generated/eval_results_v1-curated.json) | Real 20-row baseline eval result from the most recent workshop pass (DEMO 1) |
+| [generated/eval_results_v1-demo.json](../../.github/agents/brk230-demo/generated/eval_results_v1-demo.json) | Real 50-row v1 baseline eval result (DEMO 2 anchor) |
+| [generated/eval_results_v2-demo.json](../../.github/agents/brk230-demo/generated/eval_results_v2-demo.json) | Real 50-row v2 multi-model eval result (DEMO 2/3) |
+| [generated/eval_results_v3-demo.json](../../.github/agents/brk230-demo/generated/eval_results_v3-demo.json) | Real 50-row v3 post-fine-tune eval result (DEMO 4) |
+| [.reference-copy/](../../.github/agents/brk230-demo/.reference-copy/) | **Reference-only** snapshot of one full live workshop run (eval JSONs, load-test CSVs, fine-tune logs, sample data, progress notes). Kept solely as a "known-good" archive for the BRK230 session — the agent does **not** read from here. |
+
+> **Why these files live here at all.** Workshop runs write everything
+> under [code/generated/](code/) which is **`.gitignore`d** — nothing
+> from a real run is committed by default. The `session/`,
+> `generated/`, and `.reference-copy/` folders above exist *only*
+> because we manually copied a chosen run's artifacts into the agent
+> tree so the BRK230 replay has something deterministic to read. If
+> you re-run the workshop and want those new numbers in the demo,
+> you have to copy the fresh `eval_results_*.json` over `generated/`
+> yourself (see *Running a fresh live demo* above) — git won't carry
+> them across for you.
 
-| Time | Beat | Action |
-|---|---|---|
-| 0:00 | Opening hook | Tab 1, models + endpoints visible |
-| 0:30 | Describe the problem | Stay on Tab 1 |
-| 1:00 | Switch to Copilot prompt | Tab 4, Copilot Chat |
-| 1:30 | Paste prompt, let it run | Chat streaming in |
-| 2:30 | Walk through the response | Highlight each row |
-| 3:15 | Name-by-job insight | Point to deployment names |
-| 3:30 | Switch back to portal | Tab 1 — show deployments |
-| 3:50 | Land the cost message | Stay on Tab 1 |
-| 4:00 | Hard stop |  |
 
----
-
-## Demo 2 — Validate with evidence (~4 min)
-
-**Message to land:** Public benchmarks measure what someone else cares about. The only number that matters for shipping is: does it meet *your* bar, on *your* prompts? Foundry makes that a first-class operation, not a side project.
-
-**Beats:** Set criteria → Load prompts → Run comparison → Review results  
-**Workshop reference:** [Step 2 — Baseline](./02-baseline-sdk.md), [Step 4 — Synthetic data](./04-synthetic-data.md), [Step 5 — Evaluations](./05-evaluations.md)
-
-### What to have visible at the start
-
-- **Tab 4 (Codespace)** terminal showing the pre-run scorecard output (v1 and v2 results scrolled to).
-- **Tab 2 (Portal)** on Evaluation — three run rows visible (v1-baseline, v2-batch, v3-final).
-
----
-
-### Transcript
-
-> *(Start on Tab 4 — terminal, scorecard output visible)*
-
-"A lot of teams skip this step — or they do it once, at the start, with someone else's benchmark. That's the part that bites them in production.
-
-Here's what an honest starting point looks like. This is v1 of the Zava concierge — `gpt-4.1` doing everything — measured against twenty representative traveler requests we wrote by hand. Policy questions, budget constraints, vision edge cases, translation.
-
-```
-v1-baseline:  quality 0.61  ·  $0.108/task  ·  12.3s p50
-```
-
-Quality of 0.61. That means four in ten trips either fail a business constraint, misquote the policy, or produce malformed JSON that downstream code can't parse. Not good enough to ship — and we know that now, before it goes in front of a traveler.
-
-Here's the other thing we did before running this. We set three explicit targets:
-
-- Quality ≥ 0.92 — meaning at least 92% of trips pass all constraints and policy checks.
-- Cost ≤ $0.03 per task.
-- Latency ≤ 8 seconds p50.
-
-These numbers are in `s02_config.py`. Every subsequent eval checks against them. The scorecard only goes green when all three hit.
-
-*(Scroll down in terminal to show v2 output)*
-
-After Step 3 — model selection, routing each job to a smaller model — here's v2:
-
-```
-v2-batch:     quality 0.78  ·  $0.063/task  ·  9.4s p50
-```
-
-Quality went up. Cost dropped significantly. But we're not green yet. Quality is still short, and we haven't applied the fine-tuned policy model. That's the key insight: **routing alone improved quality** because the planner isn't spending context budget on tasks nano handles better. And the eval set tells us that — we didn't have to guess.
-
-**[SWITCH → Tab 2: Portal Evaluation]**
-
-Everything that ran in the terminal is also visible here. Three eval runs, pinned to the dataset version they ran against. Click Compare — v1 and v3 side by side.
-
-*(Click Compare → select v1-baseline and v3-final)*
-
-This is what I want you to see. Row 14 — Carmen asks about parking reimbursement at SAN airport. V1 gives a plausible-sounding answer. V3 cites Section 4.2 verbatim. One of those answers you can show a compliance team. One you can't.
-
-The dataset version is pinned right here at the top. These numbers are only meaningful because the dataset is fixed. If you change what you're measuring against, the numbers aren't comparable — and the portal enforces that discipline.
-
-That's the message: benchmarks on someone else's data tell you what you paid for. Evals on your own prompts tell you whether you're ready to ship."
-
----
-
-### Cue sheet
-
-| Time | Beat | Action |
-|---|---|---|
-| 0:00 | Opening — the skip problem | Tab 4, terminal, v1 scorecard |
-| 0:30 | Show v1 numbers | Point at 0.61 quality |
-| 1:00 | Introduce the three targets | Point at config / scorecard |
-| 1:45 | Show v2 numbers | Scroll terminal to v2 output |
-| 2:30 | Quality-up insight | Stay on terminal |
-| 3:00 | Switch to portal | Tab 2, Evaluation |
-| 3:10 | Compare v1 vs v3, row 14 | Row-level diff visible |
-| 3:40 | Dataset pinning insight | Point at dataset version header |
-| 4:00 | Hard stop |  |
-
----
-
-## Demo 3 — Optimize cost and performance (~5 min)
-
-**Message to land:** The win isn't a better single model. It's treating the workload as a system — routing, fine-tuning, and tiering working together. Foundry gives you the infrastructure to make that systematic, not heroic.
-
-**Beats:** Profile request → Apply routing → Compare cost/quality → Review savings  
-**Workshop reference:** [Step 7 — Multi-model agent](./07-multi-model-agent.md), [Step 8 — Portal review](./08-portal-review.md)
-
-### What to have visible at the start
-
-- **Tab 4 (Codespace)** with `s05_multi_model_agent.py` open, terminal ready in `code/`.
-- **Tab 3 (Portal)** pre-loaded on the version compare view (v1 vs v2 vs v3).
-
----
-
-### Transcript
-
-> *(Start on Tab 4 — s05_multi_model_agent.py open)*
-
-"Alright. This is the part where the three decisions we made — model selection, evaluation, fine-tuning — get assembled into a single agent and we find out if the compound win is real.
-
-Here's the v3 agent. It looks almost identical to v1 structurally. The core loop is the same. What changed is underneath: every task now routes to the model we picked for it, and the policy model is the fine-tuned version, not the base.
-
-There's one flag in this file that tells you everything:
-
-*(Scroll to `USE_FT_POLICY = True`)*
-
-```python
-USE_FT_POLICY = True  # flip to False to go back to v2 behavior
-```
-
-That one line is the entire fine-tune swap. The deployment name is `policy-mini-ft` — same job name from Demo 1, different model underneath. The planner code never changed.
-
-Let me run Carmen's full trip end-to-end through this agent:
-
-*(In terminal)*
-
-```bash
-python -c "
-import json, s05_multi_model_agent as agent
-with open('../sample-data/carmen-trace.json') as f:
-    carmen = json.load(f)
-out = agent.run(carmen['user_message'], image_url=carmen.get('image_url'))
-print(json.dumps(out, indent=2, default=str))
-"
-```
-
-*(Let it run — ~7-8 seconds)*
-
-There it is. Flight under $1500, hotel near Alexanderplatz under $600 total, policy notes citing Section 4.2 and 7.1, booking confirmed. Seven and a half seconds wall clock.
-
-Now let's run the full eval over the whole dataset and see the actual numbers:
-
-*(In terminal — run pre-staged result or re-run live if time allows)*
-
-```
-=== v3-final scorecard ===
-Quality   █████████░  0.94  ✅
-Cost      ██░░░░░░░░  $0.028/task  ✅
-Latency   ███░░░░░░░  7.6 s  ✅
-```
-
-All green. Let me show you what that means in actual terms.
-
-**[SWITCH → Tab 3: Portal version compare]**
-
-Here are all three versions side by side. V1, V2, V3. Look at the cost column.
-
-V1: `$0.108` per trip. V3: `$0.028` per trip. That's a **74% cost reduction** — not from switching to a cheaper model for the whole thing, but from routing each task to the right model, fine-tuning where prompting plateaued, and never spending frontier tokens on tasks that don't need them.
-
-Quality went from 0.61 to 0.94 at the same time. Usually cost and quality trade off. Here they improved together — because v1's quality problem *was* a cost problem in disguise. The model was spending its context budget doing routing and translation when it should have been reasoning about the itinerary.
-
-Now click into the architecture diff —
-
-*(Click to show v1 vs v3 architecture in agent versions tab if available)*
-
-V1: one model, one deployment. V3: four deployments, each named by the job it does. When `gpt-4.1-mini-v2` ships next quarter, we evaluate it against the same dataset, swap it behind `router-nano` if it wins, and nothing in the agent code changes.
-
-That's the loop. Select. Evaluate. Optimize. Operate. You just watched one full turn of it.
-
-And everything you saw here — the evals, the versions, the routing, the fine-tune — ran on a Foundry project any developer can provision in ten minutes. It's not a research project. It's how you build production AI today."
-
----
-
-### Cue sheet
-
-| Time | Beat | Action |
-|---|---|---|
-| 0:00 | Agent code walkthrough | Tab 4, s05_multi_model_agent.py |
-| 0:30 | Flag `USE_FT_POLICY = True` | Scroll to that line |
-| 1:00 | Run Carmen's trip end-to-end | Terminal command |
-| 1:45 | Trip output — verify fields | Output JSON visible |
-| 2:15 | Run full eval | Terminal — scorecard |
-| 2:45 | All green — explain significance | Stay on terminal |
-| 3:00 | Switch to portal | Tab 3, version compare |
-| 3:15 | Cost column — v1 vs v3 | Point at numbers |
-| 3:45 | Quality + cost both improved | The "not a tradeoff" insight |
-| 4:15 | Architecture diff — name by job | Show v1 vs v3 topology |
-| 4:40 | The loop — Select/Evaluate/Optimize | Closing hook |
-| 5:00 | Hard stop |  |
-
----
-
-## Recovery notes
-
-Use these if something goes wrong mid-demo.
-
-### Deployment not found / API error (any demo)
-
-Switch to the portal, navigate to **Models + endpoints**, and show the five deployments visually. Say: *"While that reconnects, let me show you the same thing from the portal side."* The deployments are the story — the live call is supporting evidence.
-
-### Eval run takes too long (Demo 2 or 3)
-
-If re-running live isn't feasible in time, the pre-staged terminal output is sufficient. Say: *"I ran this before we started — here's the output"* and scroll to it. The numbers are real; they came from actual runs on the eval set.
-
-### Copilot skill response is slow or truncated (Demo 1)
-
-The skill response table is reproducible — you can read the key row aloud while it streams. If it fails entirely, flip to `s02_config.py` and say: *"This is the same recommendation the skill produced — five jobs, four deployment names, each named by the task not the model."* The message survives without the live call.
-
-### Fine-tune deployment missing (Demo 3)
-
-Set `USE_FT_POLICY = False` in `s05_multi_model_agent.py`, re-run the Carmen trace, and use the v2 scorecard numbers. Say: *"This is v2 — routing without fine-tuning. The quality gap between v2 at 0.78 and v3 at 0.94 is exactly the policy fine-tune's contribution. Step 6 of the workshop walks you through generating that."* The architecture story still lands.
-
----
-
-## Three hooks to repeat in every demo
-
-These phrases anchor each demo to the same through-line and work as natural transitions between demos:
-
-- **Demo 1:** *"Name your deployment by job, not by model."* — Says it's the workload topology that matters, not the catalog choice.
-- **Demo 2:** *"Measure on your data, not a public benchmark."* — Says evaluation is only meaningful when it reflects your actual usage.
-- **Demo 3:** *"The win is the system, not the single model."* — Says optimization is a compounding set of decisions, each justified by the scorecard.
