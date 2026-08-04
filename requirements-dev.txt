@@ -1,7 +1,12 @@
-# General Dependencies
+# ............. General Dependencies
 numpy
 pandas
 ipykernel
 
-# Workshop dependencies
--r workshops/foundry-models-e2e/code/requirements.txt
+# ............. Spec validation (used by scripts/validate-specs.py)
+pyyaml
+jsonschema>=4.18
+
+# ............. Capsule dependencies
+# MAI-Image-2.5 / Flash / Pro — REST calls to /mai/v1/images/* endpoints
+requests
