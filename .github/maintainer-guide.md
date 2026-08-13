@@ -60,8 +60,8 @@ Pick the smallest thing that exercises the flow, then work up:
 | Want to add | Use | Produces |
 |---|---|---|
 | A **glossary term** you noticed missing | [`add-to-glossary`](./skills/add-to-glossary/SKILL.md) | Entry in `docs/GLOSSARY.md` under the right letter section |
-| A **new model family** | [`add-family`](./skills/add-family/SKILL.md) | `models/<slug>/README.md` |
-| A **model** in an existing family (no capsule yet) | [`add-model`](./skills/add-model/SKILL.md) | Row in `models/<family>/README.md` |
+| A **new model publisher** | [`add-publisher`](./skills/add-publisher/SKILL.md) | `models/<slug>/README.md` |
+| A **model** in an existing publisher (no capsule yet) | [`add-model`](./skills/add-model/SKILL.md) | Row in `models/<publisher>/README.md` |
 | A **full release capsule** | [`CapsuleCreatorAgent`](./agents/CapsuleCreatorAgent.md) → [`add-capsule`](./skills/add-capsule/SKILL.md) | Capsule folder + 1–N notebooks + CHANGELOG row + Recently added refresh |
 | A **new capability** in the taxonomy | [`add-capability-doc`](./skills/add-capability-doc/SKILL.md) | Primer under `docs/primers/` + row in repo README taxonomy |
 
@@ -89,7 +89,7 @@ Still all green? The setup is working.
                                   │ orchestrates
        ┌──────────┬──────────┬────┴─────┬──────────────┬──────────────────┐
        ▼          ▼          ▼          ▼              ▼                  ▼
-  add-family  add-model  add-capsule  add-to-  add-capability-  refresh-recent-
+  add-publisher  add-model  add-capsule  add-to-  add-capability-  refresh-recent-
                                       glossary       doc              activity
        │          │          │          │              │                  │
        └──────────┴────┬─────┴──────────┴──────────────┴──────────────────┘
@@ -121,11 +121,11 @@ upgrade path to GitHub Spec Kit later.
 ### 3.1 A new release drops
 
 1. Open a session with the `CapsuleCreatorAgent`.
-2. The agent asks for family, model, release date, capability tags,
+2. The agent asks for publisher, model, release date, capability tags,
    pricing, expiry, model card + docs + sample references
    (**required**), 1–3 target domains, and a list of teaching concepts
    (each notebook covers 1–3 concepts).
-3. The agent invokes `add-family` / `add-model` / `add-capsule` /
+3. The agent invokes `add-publisher` / `add-model` / `add-capsule` /
    `refresh-recent-activity` in order.
 4. Run `python scripts/validate-specs.py` — must be all green.
 5. Skim the generated capsule README + notebooks for the voice/hype
@@ -134,17 +134,11 @@ upgrade path to GitHub Spec Kit later.
 
 ### 3.2 A model is retiring
 
-Nothing manual — the `expires` field in the family README's members
-table + the capsule frontmatter drives the ⚠️ marker in the
-**Recently added** table.
-Just make sure `expires:` is populated. Run:
-
-```bash
-# Agent invocation or:
-# The skill lives at .github/skills/refresh-recent-activity/
-```
-
-The section warns when anything expires in the next 60 days.
+Add the date to the **Expires** column of that model's row in the
+publisher README members table (`add-model` takes an `expires` input
+for this). That table is the single place a retirement date is
+tracked — the repo README and the CHANGELOG deliberately don't carry
+one, so there is nothing to regenerate.
 
 ### 3.3 Monthly refresh
 
@@ -171,9 +165,9 @@ Use `add-capability-doc`. This:
   capsules can tag themselves with it — confirm this schema change in
   review.
 
-### 3.6 Renaming a family or model
+### 3.6 Renaming a publisher or model
 
-Slugs appear in three places: the folder path, `family:`/`model:`
+Slugs appear in three places: the folder path, `publisher:`/`model:`
 frontmatter fields, and cross-references in the repo README + CHANGELOG.
 Do the rename in a single PR, then run the validator and grep for the
 old slug:
@@ -215,13 +209,13 @@ Grep-based invariants that keep the repo internally consistent:
   ```
 - **Every capsule README ends with `## References`:**
   ```bash
-  for f in models/*/*/*/README.md; do
+  for f in models/*/*/README.md; do
     grep -q "^## References" "$f" || echo "MISSING References: $f"
   done
   ```
 - **Every notebook has a `Your Turn to Explore` cell:**
   ```bash
-  for nb in models/*/*/*/notebooks/*.ipynb; do
+  for nb in models/*/*/*.ipynb; do
     grep -q "Your Turn to Explore" "$nb" || echo "MISSING YTTE: $nb"
   done
   ```
@@ -290,36 +284,32 @@ Do **not** run these in CI by default (cost + secrets). Instead:
   notebooks against a shared test project, with credentials injected
   from GitHub Actions secrets.
 
-### Layer 5 — CI wiring (recommended)
+### Layer 5 — validation wiring
 
-Minimum viable `.github/workflows/validate.yml`:
+The real workflow is
+[`.github/workflows/validate.yml`](./workflows/validate.yml). It runs
+on **pull requests** and on demand, but not on push — so CI stays off
+every individual commit and the `validate` job is the merge gate. Mark
+it as a required status check in branch protection, or a red run is
+only advisory.
 
-```yaml
-name: Validate specs
-on:
-  pull_request:
-  push: { branches: [main] }
-jobs:
-  specs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install pyyaml jsonschema
-      - run: python scripts/validate-specs.py
-      - name: No banned marketing phrases
-        run: |
-          ! rg -qi -e 'revolutionary|game-changing|unlocks?|supercharge' \
-            -e 'seamless|cutting-edge|best-in-class|state-of-the-art' \
-            README.md CHANGELOG.md docs/ models/
-      - name: Brand rule
-        run: |
-          ! rg -q 'Azure AI Foundry' README.md CHANGELOG.md docs/ models/ .github/ scripts/
+Locally, the pre-commit hook
+([`.pre-commit-config.yaml`](../.pre-commit-config.yaml)) is what
+catches problems before they reach the PR. Both run the same
+entrypoint:
+
+```bash
+python scripts/validate.py           # schemas + crosslinks + generated files
+python scripts/validate.py --watch   # interactive: re-run on every save
+python scripts/validate.py --fix     # regenerate stale generated files
 ```
 
-This is the **testing floor**. Add Layer 2/3 checks as their own steps
-when the repo grows enough that grep-by-hand stops scaling.
+Voice rules — no hype words, always **Microsoft Foundry** — are **not**
+automated. They are reviewer-enforced through the checklist in
+[`pull_request_template.md`](./pull_request_template.md). A naive
+grep would flag legitimate strings such as the
+`azure-ai-foundry-blog` URL path, so treat any future automation as a
+Layer 2/3 check that has to exclude link targets.
 
 ---
 
@@ -353,7 +343,7 @@ frontmatter.
 - **`.env` in git.** `*.env` is gitignored. If you see one staged, stop
   and unstage it — the sample template is `scripts/sample.env`.
 - **Slugs with underscores or spaces.** Everything is kebab-case. The
-  family/model regex in `capsule.schema.json` will reject anything else.
+  publisher/model regex in `capsule.schema.json` will reject anything else.
 - **Notebook that grew past 3 concepts.** Split it. The schema
   (`notebooks[].concepts` has `maxItems: 3`) will reject it, but it's
   cheaper to split during authoring than after review.
@@ -384,19 +374,23 @@ frontmatter.
 Contributors can hand-author capsules and CHANGELOG entries without
 going through the agent. Two safety nets catch most mistakes for you:
 
-- **CI** — the `Validate contribution` workflow runs
-  [`validate-specs.py`](../scripts/validate-specs.py) (JSON-Schema
-  frontmatter) **and**
-  [`validate-crosslinks.py`](../scripts/validate-crosslinks.py) on
-  every PR. Between them they enforce:
+- **`scripts/validate.py`** — one command that runs the schema
+  validator, the crosslink validator, and the generated-file check.
+  Run it before committing, or leave `--watch` running while you
+  edit. The pre-commit hook runs the same command, and the
+  `Validate contribution` workflow runs it on every pull request,
+  where it gates the merge. Between them they enforce:
   - Frontmatter matches the schema for its kind
   - Every capsule has a matching `CHANGELOG.md` row (date + model)
-  - Every capsule is listed in its family README
+  - Every CHANGELOG row is exactly four cells wide
+  - Every capsule is listed in its publisher README
   - Every capability tag has a matching `docs/primers/<slug>.md`
+  - Every `related_primers` entry names a real primer slug
   - `README.md` Recently added top 3 = `CHANGELOG.md` top 3
+  - Generated files (`catalog.json`, `llms.txt`, `CAPSULE-TOC.md`) are current
   - No `_review_` placeholders remain in learner-facing files
 - **PR template** — [`.github/pull_request_template.md`](./pull_request_template.md)
-  gives contributors a checklist per change type (capsule, family,
+  gives contributors a checklist per change type (capsule, publisher,
   primer, glossary, CHANGELOG-only). Anything unchecked in a section
   the PR touches is a signal for the reviewer.
 
@@ -410,18 +404,23 @@ That leaves you to eyeball the things machines can't check:
   AI Foundry").
 - **Grounding.** Learner-facing links point to `learn.microsoft.com`
   when a canonical Learn page exists; provider docs are a fallback.
-- **Pricing verifiability.** The Pricing cell in the CHANGELOG row
-  links to an official pricing page when one exists, otherwise to the
-  blog post the figure came from.
+- **Pricing.** Not tracked in the CHANGELOG or the README. Rates
+  change by region, tier, and deployment type, so a frozen figure goes
+  stale silently. A capsule points at the model card for price.
 
-Contributors can run both validators locally before pushing:
+Run every check with one command before pushing:
 
 ```bash
-python scripts/validate-specs.py
-python scripts/validate-crosslinks.py
+python scripts/validate.py
 ```
 
-or install the pre-commit hooks to have them run on every commit:
+Leave it running while you draft, so each save re-checks:
+
+```bash
+python scripts/validate.py --watch
+```
+
+or install the pre-commit hooks to have it run on every commit:
 
 ```bash
 pip install pre-commit && pre-commit install

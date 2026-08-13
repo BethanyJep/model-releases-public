@@ -1,8 +1,10 @@
 ---
 kind: capsule
-family: microsoft-ai
+publisher: microsoft-ai
 model: mai-image-2.5-flash
+summary: "Generate images faster and at lower cost"
 release_date: "2026-06-02"
+last_updated: "2026-08-04"
 capabilities: [image-generation]
 model_card: https://ai.azure.com/catalog/models/MAI-Image-2.5-Flash
 announcement: https://microsoft.ai/news/microsoft-build-2026-mai-keynote-transcript/
@@ -18,24 +20,11 @@ notebooks:
       - batch image generation
       - throughput measurement and cost estimation
       - concurrent requests for high-volume workflows
-references:
-  - title: "Deploy and use MAI image models in Microsoft Foundry"
-    url: "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-mai-image?tabs=python"
-    kind: docs
-    note: "Official how-to covering the generations and edits APIs, authentication, and rate limits."
-  - title: "Build 2026 MAI keynote transcript"
-    url: "https://microsoft.ai/news/microsoft-build-2026-mai-keynote-transcript/"
-    kind: blog
-    note: "Keynote introducing the full MAI model family including Flash."
-  - title: "MAI-Image-2.5 model page"
-    url: "https://microsoft.ai/models/mai-image-2-5/"
-    kind: blog
-    note: "Model overview, capability comparison, and arena benchmarks."
 ---
 
 # MAI-Image-2.5-Flash — Release Capsule
 
-**Released:** 2026-06-02 · **Family:** [Microsoft AI](../../README.md) · **Capability:** Image Generation
+**Released:** 2026-06-02 · **Publisher:** [Microsoft AI](../README.md) · **Capability:** Image Generation
 
 ## Before You Begin
 
@@ -47,7 +36,7 @@ references:
 | Release date | 2026-06-02 |
 | Deployment regions | West Central US · East US · West US · West Europe · Sweden Central · South India · UAE North |
 
-See [models/quickstart/](../../../quickstart/README.md) for first-time Foundry project setup.
+See [models/quickstart/](../../quickstart/README.md) for first-time Foundry project setup.
 
 **Required env variables:**
 
@@ -68,8 +57,8 @@ same text-to-image generation and image-to-image editing capabilities as the bas
 lower latency and cost per image at scale. Choose Flash when throughput and cost efficiency matter more
 than maximum fidelity.
 
-- [MAI-Image-2.5 capsule](../../mai-image-2.5/2026-06-02/) — base model; start here if new to the family
-- [MAI-Image-2.5-Pro capsule](../../mai-image-2.5-pro/2026-07-23/) — Pro variant with portrait quality and text rendering
+- [MAI-Image-2.5 capsule](../mai-image-2.5/) — base model; start here if new to the family
+- [MAI-Image-2.5-Pro capsule](../mai-image-2.5-pro/) — Pro variant with portrait quality and text rendering
 
 ## API endpoints
 

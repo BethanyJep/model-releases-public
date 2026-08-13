@@ -1,8 +1,10 @@
 ---
 kind: capsule
-family: microsoft-ai
+publisher: microsoft-ai
 model: mai-image-2.5-pro
+summary: "Render portraits, in-image text, and complex scenes"
 release_date: "2026-07-23"
+last_updated: "2026-08-04"
 capabilities: [image-generation]
 model_card: https://ai.azure.com/catalog/models/MAI-Image-2.5-Pro
 announcement: https://microsoft.ai/news/introducing-mai-image-2-5-pro-and-mai-voice-2-flash/
@@ -18,24 +20,11 @@ notebooks:
       - high-fidelity portrait generation
       - accurate text rendering in images
       - visual reasoning across complex scenes
-references:
-  - title: "Deploy and use MAI image models in Microsoft Foundry"
-    url: "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-mai-image?tabs=python"
-    kind: docs
-    note: "Official how-to covering the generations and edits APIs, authentication, and rate limits."
-  - title: "Introducing MAI-Image-2.5-Pro and MAI-Voice-2-Flash"
-    url: "https://microsoft.ai/news/introducing-mai-image-2-5-pro-and-mai-voice-2-flash/"
-    kind: blog
-    note: "Release announcement for the Pro variant."
-  - title: "MAI-Image-2.5 model page"
-    url: "https://microsoft.ai/models/mai-image-2-5/"
-    kind: blog
-    note: "Model overview, capability comparison, and arena benchmarks for the full family."
 ---
 
 # MAI-Image-2.5-Pro — Release Capsule
 
-**Released:** 2026-07-23 · **Family:** [Microsoft AI](../../README.md) · **Capability:** Image Generation
+**Released:** 2026-07-23 · **Publisher:** [Microsoft AI](../README.md) · **Capability:** Image Generation
 
 ## Before You Begin
 
@@ -47,7 +36,7 @@ references:
 | Release date | 2026-07-23 |
 | Deployment regions | West Central US · East US · West US · West Europe · Sweden Central · South India · UAE North |
 
-See [models/quickstart/](../../../quickstart/README.md) for first-time Foundry project setup.
+See [models/quickstart/](../../quickstart/README.md) for first-time Foundry project setup.
 
 **Required env variables:**
 
@@ -70,7 +59,7 @@ AZURE_MAI_IMAGE_25_PRO_DEPLOYMENT   # your MAI-Image-2.5-Pro deployment name
 - **Visual reasoning** — coherent spatial relationships, object consistency, and material accuracy
 - **Character consistency** — same person recognisable across poses, angles, and lighting conditions
 
-If you are new to the family, start with [MAI-Image-2.5](../../mai-image-2.5/2026-06-02/) to understand the baseline generation and editing APIs.
+If you are new to the family, start with [MAI-Image-2.5](../mai-image-2.5/) to understand the baseline generation and editing APIs.
 
 ## API endpoints
 

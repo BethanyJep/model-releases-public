@@ -1,5 +1,5 @@
 ---
-kind: family
+kind: publisher
 name: xAI
 slug: xai
 one_line: Grok family
@@ -7,7 +7,7 @@ provider: xAI
 related_primers: [chat-completion, reasoning-models]
 ---
 
-# xAI
+# xAI Models on Microsoft Foundry
 
 > **The Grok family on Microsoft Foundry.** xAI's chat and reasoning
 > models, deployable directly from the Foundry catalog.

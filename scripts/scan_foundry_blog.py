@@ -6,15 +6,18 @@ announcements and stage draft CHANGELOG + README updates.
 Behavior:
 
 1. Fetch the Foundry blog index page and follow "next page" links up
-   to --max-pages (default 3).
+   to --max-pages (default 3, though paging is currently
+   client-side so one page is all the site serves).
 2. Extract candidate posts (URL, title, publish date).
 3. Filter to plausible model announcements (title heuristic: mentions
    a model family, "introducing", "available", "now in Foundry", etc).
 4. Diff against blog URLs already referenced in CHANGELOG.md.
-5. For each new post, prepend a draft row to CHANGELOG.md with the
-   Date linking to the blog post. Family / Model / Capabilities /
-   Model card / Pricing cells are filled with `_review_` placeholders
-   so the maintainer knows what to complete before merging.
+5. For each new post, add a draft row to CHANGELOG.md under its
+   `## <Month> <Year>` heading (creating the heading and table header
+   if the month is new), with the Date linking to the blog post.
+   Publisher / Model / Capabilities cells are filled with
+   `_review_` / `_—_` placeholders so the maintainer knows what to
+   complete before merging.
 6. Regenerate the README `<!-- BEGIN:RECENTLY-ADDED -->` block from
    the top 3 CHANGELOG rows.
 7. Print a short summary to stdout so the workflow can surface it in
@@ -27,7 +30,7 @@ Design notes:
 - The blog listing HTML shape may drift; parsing is intentionally
   forgiving. When a field can't be extracted we fall back to
   `_review_` and let the maintainer fix it in the PR.
-- The script never edits existing CHANGELOG rows — it only prepends.
+- The script never edits existing CHANGELOG rows — it only adds.
   Manual/curated rows added by hand keep their fidelity.
 - A row is considered "already present" if its Date-cell markdown link
   points at the same blog URL (path-normalized, ignoring trailing /).
@@ -47,15 +50,19 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable
 
-BLOG_INDEX = (
-    "https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/"
-)
+SITE_ROOT = "https://techcommunity.microsoft.com"
 
-# Post URLs on the community look like
+# Tech Community reorganized blogs under /category/<topic>/blog/<name>.
+# The old /blog/azure-ai-foundry-blog/ index now 404s.
+BLOG_INDEX = f"{SITE_ROOT}/category/ai/blog/azure-ai-foundry-blog"
+
+# Individual posts keep their canonical /blog/... path:
 #   https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/<slug>/<numeric-id>
+# The index links to them with *relative* hrefs, so the origin is
+# optional here and resolved against SITE_ROOT.
 POST_URL_RE = re.compile(
-    r"https://techcommunity\.microsoft\.com/blog/azure-ai-foundry-blog/"
-    r"([a-z0-9\-]+)/(\d+)",
+    r"(?:https://techcommunity\.microsoft\.com)?"
+    r"/blog/azure-ai-foundry-blog/([a-z0-9\-]+)/(\d+)",
     re.IGNORECASE,
 )
 
@@ -126,7 +133,7 @@ def http_get(url: str, timeout: int = 30) -> str:
 def extract_post_urls(page_html: str) -> list[str]:
     seen: dict[str, None] = {}
     for m in POST_URL_RE.finditer(page_html):
-        url = m.group(0)
+        url = urllib.parse.urljoin(SITE_ROOT, m.group(0))
         # Strip query/fragment defensively.
         p = urllib.parse.urlsplit(url)
         url = urllib.parse.urlunsplit(
@@ -137,6 +144,40 @@ def extract_post_urls(page_html: str) -> list[str]:
     return list(seen)
 
 
+def _strip_site_suffix(title: str) -> str:
+    """Drop the trailing " | Microsoft Community Hub" site branding.
+
+    og:title carries it, and it would otherwise land in the drafted
+    CHANGELOG row.
+    """
+    return re.sub(
+        r"\s*[|\-–]\s*Microsoft Community Hub\s*$", "", title.strip(),
+        flags=re.IGNORECASE,
+    ).strip()
+
+
+def _parse_date(value: str) -> date | None:
+    """Parse the date formats the community has used.
+
+    JSON-LD here carries a US-locale string ("8/5/2026, 6:00:00 PM"),
+    not ISO, so `fromisoformat` alone silently yields no date and the
+    drafted row gets a YYYY-MM-DD placeholder.
+    """
+    value = value.strip()
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+    except ValueError:
+        pass
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", value)
+    if m:
+        month, day, year = (int(g) for g in m.groups())
+        try:
+            return date(year, month, day)
+        except ValueError:
+            return None
+    return None
+
+
 def extract_title(post_html: str, fallback: str = "") -> str:
     # <meta property="og:title" content="..."> is the most reliable.
     m = re.search(
@@ -145,12 +186,11 @@ def extract_title(post_html: str, fallback: str = "") -> str:
         re.IGNORECASE,
     )
     if m:
-        return html.unescape(m.group(1)).strip()
+        return _strip_site_suffix(html.unescape(m.group(1)))
     m = re.search(
         r"<title[^>]*>(.*?)</title>", post_html, re.IGNORECASE | re.DOTALL
     )
     if m:
-        # Strip trailing " - Microsoft Community Hub" etc.
         title = html.unescape(m.group(1)).strip()
         title = re.split(r"\s+[|\-–]\s+", title, maxsplit=1)[0]
         return title.strip()
@@ -175,12 +215,9 @@ def extract_published(post_html: str) -> date | None:
             for key in ("datePublished", "dateCreated", "dateModified"):
                 v = item.get(key)
                 if isinstance(v, str):
-                    try:
-                        return datetime.fromisoformat(
-                            v.replace("Z", "+00:00")
-                        ).date()
-                    except ValueError:
-                        pass
+                    parsed = _parse_date(v)
+                    if parsed:
+                        return parsed
     # Fallback: <meta property="article:published_time" ...>
     m = re.search(
         r'<meta[^>]+property=["\']article:published_time["\'][^>]+'
@@ -189,12 +226,7 @@ def extract_published(post_html: str) -> date | None:
         re.IGNORECASE,
     )
     if m:
-        try:
-            return datetime.fromisoformat(
-                m.group(1).replace("Z", "+00:00")
-            ).date()
-        except ValueError:
-            pass
+        return _parse_date(m.group(1))
     return None
 
 
@@ -218,9 +250,24 @@ def crawl_index(max_pages: int) -> list[BlogPost]:
         except Exception as e:
             print(f"[warn] failed to fetch {page_url}: {e}", file=sys.stderr)
             continue
-        for u in extract_post_urls(page_html):
-            if u not in urls:
-                urls.append(u)
+        new = [u for u in extract_post_urls(page_html) if u not in urls]
+        urls.extend(new)
+        # Paging is client-side now: ?page=2 serves the same posts as
+        # page 1. Stop as soon as a page adds nothing rather than
+        # refetching the first page max_pages times. If server-side
+        # paging returns, this loop picks it back up automatically.
+        if not new:
+            break
+
+    if not urls:
+        # Discovery breaking silently is how this script rotted before:
+        # the index moved, every fetch 404'd, and a run that found
+        # nothing looked exactly like a quiet week. Fail loudly instead.
+        raise SystemExit(
+            f"[scan] no post links found at {BLOG_INDEX}\n"
+            "  The blog index has probably moved or changed markup "
+            "again. Check BLOG_INDEX and POST_URL_RE."
+        )
 
     posts: list[BlogPost] = []
     for url in urls:
@@ -243,6 +290,13 @@ CHANGELOG_URL_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Hardcoded rather than strftime("%B") so month headings don't change
+# with the runner's locale.
+MONTH_NAMES = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+
 
 def existing_changelog_urls(changelog_text: str) -> set[str]:
     urls: set[str] = set()
@@ -259,36 +313,68 @@ def existing_changelog_urls(changelog_text: str) -> set[str]:
 
 def draft_row(post: BlogPost) -> str:
     dstr = post.published.isoformat() if post.published else "YYYY-MM-DD"
-    # Draft row — maintainer completes Family / Model / Capabilities /
-    # Model card / Pricing before merging.
+    # Draft row — maintainer completes Publisher / Model /
+    # Capabilities / Model card before merging.
     return (
         f"| [{dstr}]({post.url}) | _review_ | _review_ (blog title: "
-        f"\"{post.title}\") | _review_ | _—_ | _—_ |"
+        f"\"{post.title}\") | _review_ |"
     )
 
 
-TABLE_ROW_RE = re.compile(r"^\|.*\|\s*$")
+MONTH_HEADING_RE = re.compile(r"^## \w+ \d{4}\s*$")
+TABLE_HEADER = "| Date | Publisher | Model | Capabilities |"
+TABLE_SEP = "|---|---|---|---|"
+
+
+def month_heading(date_str: str) -> str:
+    """`2026-07-29` -> `## July 2026`."""
+    d = date.fromisoformat(date_str)
+    return f"## {MONTH_NAMES[d.month - 1]} {d.year}"
 
 
 def insert_rows_into_changelog(
-    changelog_text: str, new_rows: list[str]
+    changelog_text: str, new_rows: list[tuple[str, str]]
 ) -> str:
-    """Insert new_rows immediately after the header separator row."""
+    """Insert new rows under their month's table, newest first.
+
+    `new_rows` is a list of `(date_str, row_text)`. A month heading
+    and table header are created if the month isn't present yet.
+    """
     if not new_rows:
         return changelog_text
+    trailing_nl = changelog_text.endswith("\n")
     lines = changelog_text.splitlines()
-    # Find the header row + separator.
-    for i, line in enumerate(lines):
-        if line.startswith("| Date |") and i + 1 < len(lines):
-            sep = lines[i + 1]
-            if re.match(r"^\|\s*---", sep):
-                insert_at = i + 2
-                new_block = list(new_rows)
-                lines[insert_at:insert_at] = new_block
-                return "\n".join(lines) + (
-                    "\n" if changelog_text.endswith("\n") else ""
-                )
-    raise RuntimeError("CHANGELOG.md header row not found")
+
+    # Oldest first, so repeated top-insertion leaves the newest row on
+    # top.
+    for date_str, row in sorted(new_rows, key=lambda e: e[0]):
+        heading = month_heading(date_str)
+        try:
+            at = lines.index(heading)
+        except ValueError:
+            # New month — goes above the newest existing month heading,
+            # or at the end if there are none yet.
+            first = next(
+                (i for i, ln in enumerate(lines)
+                 if MONTH_HEADING_RE.match(ln)),
+                len(lines),
+            )
+            lines[first:first] = [
+                heading, "", TABLE_HEADER, TABLE_SEP, row, "",
+            ]
+            continue
+        # Existing month — insert directly under that table's separator.
+        for i in range(at, len(lines)):
+            if lines[i].startswith("| Date |") and re.match(
+                r"^\|\s*---", lines[i + 1] if i + 1 < len(lines) else ""
+            ):
+                lines[i + 2:i + 2] = [row]
+                break
+        else:
+            raise RuntimeError(
+                f"CHANGELOG.md: no table found under '{heading}'"
+            )
+    return "\n".join(lines) + ("\n" if trailing_nl else "")
 
 
 README_MARK_BEGIN = "<!-- BEGIN:RECENTLY-ADDED -->"
@@ -298,55 +384,60 @@ README_MARK_END = "<!-- END:RECENTLY-ADDED -->"
 def parse_changelog_top(
     changelog_text: str, n: int
 ) -> list[dict[str, str]]:
-    """Extract the first n data rows from the CHANGELOG table."""
-    lines = changelog_text.splitlines()
+    """Extract the first n data rows, across all month tables."""
+    text = re.sub(r"<!--.*?-->", "", changelog_text, flags=re.DOTALL)
     rows: list[list[str]] = []
     in_table = False
-    for line in lines:
+    for line in text.splitlines():
         if line.startswith("| Date |"):
             in_table = True
             continue
-        if in_table and re.match(r"^\|\s*---", line):
+        if not in_table:
             continue
-        if in_table:
-            if not line.strip().startswith("|"):
-                break
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 6:
-                rows.append(cells)
-            if len(rows) >= n:
-                break
+        if re.match(r"^\|\s*---", line):
+            continue
+        if not line.strip().startswith("|"):
+            # End of this month's table; the next one may follow.
+            in_table = False
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 4:
+            rows.append(cells)
+        if len(rows) >= n:
+            break
     keys = [
-        "date", "family", "model", "capabilities",
-        "pricing", "capsule",
+        "date", "publisher", "model", "capabilities",
     ]
     return [dict(zip(keys, r)) for r in rows]
 
 
 def render_readme_block(rows: list[dict[str, str]]) -> str:
     header = (
-        "| Release date | Model | Description | Expires |\n"
-        "|---|---|---|---|"
+        "| Model | Release date | Capabilities |\n"
+        "| --- | --- | --- |"
     )
     body_lines: list[str] = []
     for r in rows:
-        model = r.get("model", "_review_")
-        # Description falls back to the blog title captured in the
-        # draft row's Capabilities cell if the maintainer hasn't
-        # written a real description yet.
-        description = r.get("capabilities", "").strip() or "_review_"
-        body_lines.append(
-            f"| {r.get('date', '_review_')} | **{model}** | {description} | — |"
+        # README shows a plain bold model name; the CHANGELOG cell may
+        # carry link markup and an availability note, so strip both
+        # rather than nesting a link inside bold.
+        model = re.sub(
+            r"\s*_\([^)]*\)_\s*$", "", r.get("model", "_review_").strip()
         )
-    caption = (
-        "\n\n_Top 3 most recent — see [`CHANGELOG.md`](CHANGELOG.md) "
-        "for the full history and pricing._"
-    )
+        m = re.match(r"\[([^\]]+)\]", model)
+        if m:
+            model = m.group(1)
+        capabilities = r.get("capabilities", "").strip() or "_review_"
+        body_lines.append(
+            f"| **{model}** | {r.get('date', '_review_')} "
+            f"| {capabilities} |"
+        )
+    # No caption here — the "See the full CHANGELOG" line lives outside
+    # the markers in README.md so regeneration doesn't duplicate it.
     return (
         f"{README_MARK_BEGIN}\n"
         f"{header}\n"
         + "\n".join(body_lines)
-        + caption
         + f"\n{README_MARK_END}"
     )
 
@@ -426,7 +517,14 @@ def main(argv: list[str]) -> int:
         print("[scan] nothing new to add.")
         return 0
 
-    new_rows = [draft_row(p) for p in candidates]
+    new_rows = [
+        (
+            p.published.isoformat() if p.published
+            else date.today().isoformat(),
+            draft_row(p),
+        )
+        for p in candidates
+    ]
     updated_changelog = insert_rows_into_changelog(
         changelog_text, new_rows
     )
@@ -436,8 +534,8 @@ def main(argv: list[str]) -> int:
     )
 
     if args.dry_run:
-        print("\n[dry-run] would prepend these CHANGELOG rows:")
-        for r in new_rows:
+        print("\n[dry-run] would add these CHANGELOG rows:")
+        for _, r in new_rows:
             print(f"  {r}")
         print("\n[dry-run] would update README Recently added block.")
         return 0

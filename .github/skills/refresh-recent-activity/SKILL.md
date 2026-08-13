@@ -1,12 +1,8 @@
 ---
 kind: skill
 name: refresh-recent-activity
-description: Regenerate the repo README's Recently added table from capsule folders and family expiry dates.
-inputs:
-  - name: window_days
-    type: string
-    description: Days ahead within which an expiring model gets the ⚠️ marker. Defaults to 60.
-    required: false
+description: Regenerate the repo README's Recently added table (Model / Release date / Capabilities) from the top 3 CHANGELOG rows.
+inputs: []
 produces:
   - README.md
 validates_against: []
@@ -22,20 +18,25 @@ README:
 <!-- BEGIN:RECENTLY-ADDED --> … <!-- END:RECENTLY-ADDED -->
 ```
 
-Columns produced, one row per capsule (most recent first, top 3 by
-`YYYY-MM-DD` folder name):
+Columns produced, one row per CHANGELOG row (the top 3, newest first —
+these may include announcements that have no capsule yet):
 
 | Column | Source | Link target |
 |---|---|---|
-| Release date | Capsule folder date | Capsule frontmatter `announcement` (blog post) — falls back to `model_card` if `announcement` is empty |
-| Model | Capsule frontmatter `model` | Capsule README |
-| Description | Capsule frontmatter `summary` (or first sentence of capsule README) | plain text — no link |
-| Expires | Capsule frontmatter `expires` (cross-checked against family README member row) | Bolded with ⚠️ when the date is within `window_days` (default 60); em-dash when unknown |
+| Model | CHANGELOG Model cell, minus any link markup and availability note | plain bold text — no link |
+| Release date | CHANGELOG Date cell | the announcement (carried over from the CHANGELOG cell) |
+| Capabilities | CHANGELOG Capabilities cell, verbatim | plain text — no link |
 
-Pricing is intentionally **not** shown in the README — pricing data
-lives in `CHANGELOG.md` (with a verifiable source link). The caption
-under the README table points readers there for the full history and
-pricing.
+Column order mirrors `CAPSULE-TOC.md`: what it is first, when it
+landed second. Every cell is copied from the CHANGELOG row rather than
+written by hand, so the table can be regenerated at any time without
+losing prose.
+
+Neither pricing nor expiry is shown in the README. Neither is in the
+CHANGELOG either — price lives on the model card a capsule links to,
+and expiry lives in the publisher README members table, which is the
+single place a retirement date is tracked. The caption under the
+README table points readers to the CHANGELOG for the full history.
 
 Idempotent — safe to run any time. Called automatically at the end of
 [`add-capsule`](../add-capsule/), and recommended on a monthly cadence

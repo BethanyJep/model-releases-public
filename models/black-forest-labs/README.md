@@ -1,5 +1,5 @@
 ---
-kind: family
+kind: publisher
 name: Black Forest Labs
 slug: black-forest-labs
 one_line: FLUX image-generation models
@@ -7,7 +7,7 @@ provider: Black Forest Labs
 related_primers: [image-generation]
 ---
 
-# Black Forest Labs
+# Black Forest Labs Models on Microsoft Foundry
 
 > **FLUX image-generation models on Microsoft Foundry.** State-of-the-art
 > text-to-image models available through the Foundry catalog.

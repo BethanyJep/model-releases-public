@@ -1,8 +1,10 @@
 ---
 kind: capsule
-family: microsoft-ai
+publisher: microsoft-ai
 model: mai-image-2.5
+summary: "Generate and edit images from text prompts"
 release_date: "2026-06-02"
+last_updated: "2026-08-11"
 capabilities: [image-generation]
 model_card: https://ai.azure.com/catalog/models/MAI-Image-2.5
 announcement: https://microsoft.ai/news/microsoft-build-2026-mai-keynote-transcript/
@@ -18,24 +20,11 @@ notebooks:
       - text-to-image generation
       - image dimensions and aspect ratios
       - image-to-image editing
-references:
-  - title: "Deploy and use MAI image models in Microsoft Foundry"
-    url: "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-mai-image?tabs=python"
-    kind: docs
-    note: "Official how-to covering the generations and edits APIs, authentication, and rate limits."
-  - title: "MAI-Image-2.5 model page"
-    url: "https://microsoft.ai/models/mai-image-2-5/"
-    kind: blog
-    note: "Model overview, capability comparison, and arena benchmarks."
-  - title: "Build 2026 MAI keynote transcript"
-    url: "https://microsoft.ai/news/microsoft-build-2026-mai-keynote-transcript/"
-    kind: blog
-    note: "Keynote introducing the full MAI model family."
 ---
 
 # MAI-Image-2.5 — Release Capsule
 
-**Released:** 2026-06-02 · **Family:** [Microsoft AI](../../README.md) · **Capability:** Image Generation
+**Released:** 2026-06-02 · **Publisher:** [Microsoft AI](../README.md) · **Capability:** Image Generation
 
 ## Before You Begin
 
@@ -47,7 +36,7 @@ references:
 | Release date | 2026-06-02 |
 | Deployment regions | West Central US · East US · West US · West Europe · Sweden Central · South India · UAE North |
 
-See [models/quickstart/](../../../quickstart/README.md) for first-time Foundry project setup.
+See [models/quickstart/](../../quickstart/README.md) for first-time Foundry project setup.
 
 **Required env variables:**
 
@@ -68,8 +57,8 @@ to produce visually coherent images from text prompts and supports precise, surg
 images — changing specific elements while preserving layout and composition. The Flash and Pro variants
 build on this foundation; start here if you are new to the family.
 
-- [MAI-Image-2.5-Flash capsule](../../mai-image-2.5-flash/2026-06-02/) — same release, optimised for production throughput
-- [MAI-Image-2.5-Pro capsule](../../mai-image-2.5-pro/2026-07-23/) — portrait quality, text rendering, visual reasoning (released 2026-07-23)
+- [MAI-Image-2.5-Flash capsule](../mai-image-2.5-flash/) — same release, optimised for production throughput
+- [MAI-Image-2.5-Pro capsule](../mai-image-2.5-pro/) — portrait quality, text rendering, visual reasoning (released 2026-07-23)
 
 ## API endpoints
 

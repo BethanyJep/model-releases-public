@@ -33,11 +33,14 @@ SCHEMA_DIR = REPO_ROOT / ".github" / "specs" / "schemas"
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 
-# Glob → kind mapping. First-match wins.
+# Glob → kind mapping. First-match wins, so the more specific globs
+# (quickstart, scenarios) must precede the generic capsule/publisher ones.
 KIND_GLOBS = [
-    ("models/*/*/*/README.md", "capsule"),
     ("models/quickstart/README.md", "quickstart"),
-    ("models/*/README.md", "family"),
+    ("models/multi-model-scenarios/*/README.md", "scenario"),
+    ("models/*/multi-model-scenarios/*/README.md", "scenario"),
+    ("models/*/*/README.md", "capsule"),
+    ("models/*/README.md", "publisher"),
     ("docs/primers/*.md", "primer"),
     (".github/skills/*/SKILL.md", "skill"),
     (".github/agents/*.md", "agent"),

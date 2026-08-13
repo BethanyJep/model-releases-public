@@ -1,5 +1,5 @@
 ---
-kind: family
+kind: publisher
 name: Azure OpenAI
 slug: azure-openai
 one_line: GPT-family models on Microsoft Foundry
@@ -7,7 +7,7 @@ provider: Azure OpenAI
 related_primers: [chat-completion, reasoning-models, multimodal-models, function-calling, fine-tuning]
 ---
 
-# Azure OpenAI
+# Azure OpenAI Models on Microsoft Foundry
 
 > **GPT-family models hosted on Microsoft Foundry.** The workhorse family
 > for chat, reasoning, vision, function calling, and fine-tuning across
@@ -27,7 +27,7 @@ drive the patterns other families follow.
 | _—_ | _—_ | _—_ | _—_ | _—_ | _—_ |
 
 <!-- Row template (added by add-model / add-capsule):
-| gpt-4.1 | Chat · Reasoning · Vision · Function Calling | [card](https://learn.microsoft.com/...) | YYYY-MM-DD | YYYY-MM-DD | [capsule](gpt-4.1/YYYY-MM-DD/) |
+| gpt-4.1 | Chat · Reasoning · Vision · Function Calling | [card](https://learn.microsoft.com/...) | YYYY-MM-DD | YYYY-MM-DD | [capsule](gpt-4.1/) |
 -->
 
 ## Learn more

@@ -1,5 +1,5 @@
 ---
-kind: family
+kind: publisher
 name: DeepSeek
 slug: deepseek
 one_line: DeepSeek reasoning + chat models
@@ -7,7 +7,7 @@ provider: DeepSeek
 related_primers: [reasoning-models, chat-completion]
 ---
 
-# DeepSeek
+# DeepSeek Models on Microsoft Foundry
 
 > **DeepSeek reasoning and chat models on Microsoft Foundry.** Known for
 > strong open-weight reasoning models like DeepSeek-R1.
