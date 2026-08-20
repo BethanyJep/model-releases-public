@@ -59,9 +59,9 @@ Start with the [Quickstart](#quickstart-explore-model-releases-hands-on), then p
 <!-- BEGIN:RECENT-CAPSULES -->
 | Capsule | Last updated | Description |
 | --- | --- | --- |
+| [MAI-Voice-2](models/microsoft-ai/mai-voice-2/) | 2026-08-19 | Direct expressive, multilingual, and long-form speech synthesis |
 | [MAI-Image-2.5](models/microsoft-ai/mai-image-2.5/) | 2026-08-11 | Generate and edit images from text prompts |
 | [MAI-Transcribe-1.5](models/microsoft-ai/mai-transcribe-1.5/) | 2026-08-07 | Transcribe multilingual audio with keyword biasing |
-| [MAI-Image-2.5-Pro](models/microsoft-ai/mai-image-2.5-pro/) | 2026-08-04 | Render portraits, in-image text, and complex scenes |
 <!-- END:RECENT-CAPSULES -->
 
 *See the full* [*CAPSULE-TOC*](./CAPSULE-TOC.md) *for everything else.*

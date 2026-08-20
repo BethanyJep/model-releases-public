@@ -13,6 +13,7 @@ Providers without a capsule yet are listed in the [publishers reference](./docs/
 
 | Capsule | Capability | Last updated | Description |
 | --- | --- | --- | --- |
+| [MAI-Voice-2](models/microsoft-ai/mai-voice-2/) | Audio / Speech | 2026-08-19 | Direct expressive, multilingual, and long-form speech synthesis |
 | [MAI-Image-2.5](models/microsoft-ai/mai-image-2.5/) | Image Generation | 2026-08-11 | Generate and edit images from text prompts |
 | [MAI-Transcribe-1.5](models/microsoft-ai/mai-transcribe-1.5/) | Audio / Speech | 2026-08-07 | Transcribe multilingual audio with keyword biasing |
 | [MAI-Image-2.5-Pro](models/microsoft-ai/mai-image-2.5-pro/) | Image Generation | 2026-08-04 | Render portraits, in-image text, and complex scenes |

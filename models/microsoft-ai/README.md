@@ -36,7 +36,7 @@ All models are available on Microsoft Foundry and support fine-tuning via
 | MAI-Image-2.5 | Image Generation | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Image-2.5) | 2026-06-02 | — | [capsule](mai-image-2.5/) |
 | MAI-Image-2.5-Flash | Image Generation | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Image-2.5-Flash) | 2026-06-02 | — | [capsule](mai-image-2.5-flash/) |
 | MAI-Image-2.5-Pro | Image Generation | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Image-2.5-Pro) | 2026-07-23 | — | [capsule](mai-image-2.5-pro/) |
-| MAI-Voice-2 | Audio / Speech | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Voice-2) | 2026-06-02 | — | _—_ |
+| MAI-Voice-2 | Audio / Speech | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Voice-2) | 2026-06-02 | — | [capsule](mai-voice-2/) |
 | MAI-Voice-2-Flash | Audio / Speech | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Voice-2-Flash) | 2026-07-23 | — | _—_ |
 | MAI-Transcribe-1.5 | Audio / Speech | [Foundry catalog](https://ai.azure.com/catalog/models/MAI-Transcribe-1.5) | 2026-06-02 | — | [capsule](mai-transcribe-1.5/) |
 | MAI-Transcribe-1 | Audio / Speech | _—_ | _—_ | 2026-08-20 | _—_ |

@@ -82,7 +82,7 @@
     }
   ],
   "counts": {
-    "capsules": 4,
+    "capsules": 5,
     "scenarios": 1,
     "publishers": 12,
     "primers": 10
@@ -119,6 +119,51 @@
             "high-fidelity portrait generation",
             "accurate text rendering in images",
             "visual reasoning across complex scenes"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "mai-voice-2",
+      "name": "MAI-Voice-2",
+      "publisher": "microsoft-ai",
+      "summary": "Direct expressive, multilingual, and long-form speech synthesis",
+      "release_date": "2026-06-02",
+      "last_updated": "2026-08-19",
+      "capabilities": [
+        "audio-speech"
+      ],
+      "model_card": "https://ai.azure.com/catalog/models/MAI-Voice-2",
+      "announcement": "https://microsoft.ai/news/mai-voice-2/",
+      "pricing": {
+        "notes": "Speech synthesis is billed per character; rates vary by region and tier",
+        "source": "https://azure.microsoft.com/pricing/details/speech/"
+      },
+      "domains": [
+        "accessibility",
+        "education",
+        "entertainment",
+        "media-production"
+      ],
+      "path": "models/microsoft-ai/mai-voice-2",
+      "url": "https://github.com/microsoft-foundry/model-releases/tree/main/models/microsoft-ai/mai-voice-2",
+      "notebooks": [
+        {
+          "path": "models/microsoft-ai/mai-voice-2/01-direct-expressive-delivery.ipynb",
+          "title": "Direct expressive delivery with MAI-Voice-2",
+          "concepts": [
+            "baseline speech synthesis with a prebuilt voice",
+            "SSML style and style-degree comparisons",
+            "controlled scene direction and playback review"
+          ]
+        },
+        {
+          "path": "models/microsoft-ai/mai-voice-2/02-test-multilingual-long-form.ipynb",
+          "title": "Test multilingual and long-form speech with MAI-Voice-2",
+          "concepts": [
+            "multilingual voice comparison",
+            "Hindi-English and Spanish-English code-switching",
+            "chunked long-form synthesis and consistency review"
           ]
         }
       ]

@@ -27,6 +27,7 @@ Each row links out to what you need: the date to the announcement, the model to 
 
 | Date | Publisher | Model | Capabilities |
 |---|---|---|---|
+| [2026-06-02](https://microsoft.ai/news/mai-voice-2/) | [Microsoft AI](https://ai.azure.com/catalog/models?publisher=microsoft) | [MAI-Voice-2](https://ai.azure.com/catalog/models/MAI-Voice-2)<br>_(public preview)_ | Audio / Speech |
 | [2026-06-02](https://microsoft.ai/news/mai-transcribe-1-5more-accurate-context-aware-and-built-for-production/) | [Microsoft AI](https://ai.azure.com/catalog/models?publisher=microsoft) | [MAI-Transcribe-1.5](https://ai.azure.com/catalog/models/MAI-Transcribe-1.5) | Audio / Speech |
 | [2026-06-02](https://microsoft.ai/news/microsoft-build-2026-mai-keynote-transcript/) | [Microsoft AI](https://ai.azure.com/catalog/models?publisher=microsoft) | [MAI-Image-2.5-Flash](https://ai.azure.com/catalog/models/MAI-Image-2.5-Flash) | Image Generation |
 | [2026-06-02](https://microsoft.ai/news/microsoft-build-2026-mai-keynote-transcript/) | [Microsoft AI](https://ai.azure.com/catalog/models?publisher=microsoft) | [MAI-Image-2.5](https://ai.azure.com/catalog/models/MAI-Image-2.5) | Image Generation |
