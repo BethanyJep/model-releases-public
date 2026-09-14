@@ -4,6 +4,12 @@ Every new model release on Microsoft Foundry, newest first, grouped by month.
 
 Each row links out to what you need: the date to the announcement, the model to its card, the publisher to its catalog view. Capability tags like Chat Completion or Image Generation each have a [primer](docs/README.md#learn-about-model-capabilities) if the term is new to you. A row here is an announcement, not a tutorial - when we've built a runnable notebook for a release, it's listed in the [CAPSULE-TOC](CAPSULE-TOC.md).
 
+## September 2026
+
+| Date | Publisher | Model | Capabilities |
+|---|---|---|---|
+| [2026-09-03](https://microsoft.ai/news/mai-transcribe-2-is-the-fastest-most-accurate-and-cheapest-speech-recognition-model-in-the-world/) | [Microsoft AI](https://ai.azure.com/catalog/models?publisher=microsoft) | [MAI-Transcribe-2](https://ai.azure.com/catalog/models/MAI-Transcribe-2) | Audio / Speech |
+
 ## August 2026
 
 | Date | Publisher | Model | Capabilities |
