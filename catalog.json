@@ -82,12 +82,49 @@
     }
   ],
   "counts": {
-    "capsules": 6,
+    "capsules": 7,
     "scenarios": 1,
     "publishers": 12,
     "primers": 10
   },
   "capsules": [
+    {
+      "model": "mai-transcribe-2",
+      "name": "MAI-Transcribe-2",
+      "publisher": "microsoft-ai",
+      "summary": "Transcribe noisy multilingual audio with diarization, timestamps, and domain biasing",
+      "release_date": "2026-09-03",
+      "last_updated": "2026-09-14",
+      "capabilities": [
+        "audio-speech"
+      ],
+      "model_card": "https://ai.azure.com/catalog/models/MAI-Transcribe-2",
+      "announcement": "https://microsoft.ai/news/mai-transcribe-2-is-the-fastest-most-accurate-and-cheapest-speech-recognition-model-in-the-world/",
+      "pricing": {
+        "notes": "$0.10 per hour of audio for a limited time; standard pricing is $0.36 per hour",
+        "source": "https://microsoft.ai/models/mai-transcribe-2/"
+      },
+      "domains": [
+        "contact-center",
+        "healthcare",
+        "media-captioning",
+        "meetings",
+        "accessibility"
+      ],
+      "path": "models/microsoft-ai/mai-transcribe-2",
+      "url": "https://github.com/microsoft-foundry/model-releases/tree/main/models/microsoft-ai/mai-transcribe-2",
+      "notebooks": [
+        {
+          "path": "models/microsoft-ai/mai-transcribe-2/mai-transcribe-2.ipynb",
+          "title": "Speaker-aware transcription and MAI-Transcribe-1.5 comparison with MAI-Transcribe-2",
+          "concepts": [
+            "speaker-aware transcription with timestamps and controlled noise levels",
+            "multilingual transcription and domain vocabulary biasing",
+            "controlled comparison with MAI-Transcribe-1.5"
+          ]
+        }
+      ]
+    },
     {
       "model": "aug-2026",
       "name": "Model Router — August 2026",
