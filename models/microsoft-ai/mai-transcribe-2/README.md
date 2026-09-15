@@ -17,7 +17,7 @@ notebooks:
   - path: mai-transcribe-2.ipynb
     title: "Speaker-aware transcription and MAI-Transcribe-1.5 comparison with MAI-Transcribe-2"
     concepts:
-      - speaker diarization and timestamped transcription
+      - speaker-aware transcription with timestamps and controlled noise levels
       - multilingual transcription and domain vocabulary biasing
       - controlled comparison with MAI-Transcribe-1.5
 ---
@@ -60,7 +60,7 @@ AZURE_SPEECH_ENDPOINT        # use when your Speech resource differs from the Fo
 
 | Notebook | Concepts |
 |---|---|
-| [mai-transcribe-2.ipynb](mai-transcribe-2.ipynb) | Speaker diarization and word timestamps · Multilingual transcription and domain vocabulary biasing · Controlled comparison with MAI-Transcribe-1.5 |
+| [mai-transcribe-2.ipynb](mai-transcribe-2.ipynb) | Speaker diarization and word timestamps · Multilingual and controlled noise-level transcription · Domain vocabulary biasing · Controlled comparison with MAI-Transcribe-1.5 |
 
 ## What MAI-Transcribe-2 provides
 

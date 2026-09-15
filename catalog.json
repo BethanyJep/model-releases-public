@@ -118,7 +118,7 @@
           "path": "models/microsoft-ai/mai-transcribe-2/mai-transcribe-2.ipynb",
           "title": "Speaker-aware transcription and MAI-Transcribe-1.5 comparison with MAI-Transcribe-2",
           "concepts": [
-            "speaker diarization and timestamped transcription",
+            "speaker-aware transcription with timestamps and controlled noise levels",
             "multilingual transcription and domain vocabulary biasing",
             "controlled comparison with MAI-Transcribe-1.5"
           ]
